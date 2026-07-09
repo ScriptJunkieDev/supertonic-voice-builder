@@ -1,0 +1,37 @@
+# Build outputs
+target/
+
+# Deploy / local artifacts (do not commit)
+*.jar
+*.zip
+*.bat
+*.ps1
+
+# Panel upload helper (copy locally from another nxly project)
+send.jar
+
+# Runtime data
+data/
+voices/
+supertonic3-voice-clone/
+
+# Optional local trainer snapshot (see trainer-backup/README.md)
+trainer-backup/**
+!trainer-backup/README.md
+
+# Environment / secrets
+.env
+
+# IDE / editor (local only — do not commit)
+.cursor/
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+.vscode/
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store

@@ -1,0 +1,23 @@
+# Optional vendor copy of the upstream trainer
+
+If the upstream Git repository is unreachable at startup, the app copies this folder into `TRAINER_DIR` (see `TRAINER_BACKUP_DIR`).
+
+## Populate (your machine, not committed)
+
+1. Clone the trainer repo locally (default URL is set in `application.yml` as `TRAINER_GIT_URL`).
+2. Copy the **contents** of that clone into this directory so `train_style.py` exists at:
+
+   ```text
+   trainer-backup/train_style.py
+   ```
+
+3. Include `requirements.txt` if pip should install trainer dependencies on startup.
+
+Everything under `trainer-backup/` except this README is **gitignored**. You maintain the snapshot when you choose to refresh it.
+
+At runtime the app will:
+
+1. Use `TRAINER_DIR` if `train_style.py` is already there  
+2. Else `git clone` from `TRAINER_GIT_URL`  
+3. Else copy from `trainer-backup/`  
+4. Run `pip install -r requirements.txt` when Python and that file are available  

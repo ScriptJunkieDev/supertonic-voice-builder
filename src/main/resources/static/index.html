@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Supertonic Voice Builder</title>
+  <style>
+    :root { color-scheme: dark; font-family: system-ui, Segoe UI, sans-serif; background: #11131a; color: #f2f2f2; }
+    body { margin: 0; padding: 24px; }
+    .wrap { max-width: 1100px; margin: 0 auto; }
+    .card { background: #1a1d27; border: 1px solid #2b3142; border-radius: 14px; padding: 18px; margin-bottom: 18px; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+    h1 { margin: 0 0 6px; }
+    h2 { margin-top: 0; }
+    label { display: block; margin: 10px 0 6px; color: #cfd6e6; }
+    input, select, button { border-radius: 10px; border: 1px solid #3b4358; background: #10131b; color: white; padding: 10px 12px; font-size: 15px; }
+    input[type=file] { width: calc(100% - 26px); }
+    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .grid > div { min-width: 0; }
+    button { cursor: pointer; background: #32405d; }
+    button.primary { background: #4b66a1; border-color: #6984bd; }
+    button:disabled { opacity: .6; cursor: wait; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 9px; border-bottom: 1px solid #2b3142; font-size: 14px; }
+    .badge { padding: 3px 8px; border-radius: 999px; background: #2d3548; }
+    .SUCCESS { background: #1f5c3a; } .FAILED { background: #6b2830; } .RUNNING { background: #64551f; } .QUEUED { background: #2d3548; }
+    pre { white-space: pre-wrap; overflow: auto; max-height: 420px; background: #0b0d12; border-radius: 10px; padding: 14px; border: 1px solid #2b3142; }
+    .muted { color: #9aa6bd; }
+    @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h1>Supertonic Voice Builder</h1>
+    <div class="muted">CPU-only Spring Boot appliance for creating Supertonic custom voice JSON files.</div>
+  </div>
+
+  <div class="card">
+    <h2>Create Voice</h2>
+    <form id="jobForm">
+      <label>Source WAV</label>
+      <input id="file" name="file" type="file" accept="audio/wav,.wav" required />
+      <div class="grid">
+        <div><label>Voice Name</label><input id="voiceName" name="voiceName" placeholder="my_voice" required /></div>
+        <div><label>Quality</label><select id="quality"><option value="fast">Fast - 1000 steps</option><option value="balanced" selected>Balanced - 3000 steps</option><option value="high">High - 6000 steps</option></select></div>
+        <div><label>Learning Rate</label><input id="learningRate" name="learningRate" value="0.0002" /></div>
+        <div><label>Reference Style</label><input id="referenceStyle" name="referenceStyle" value="auto" /></div>
+      </div>
+      <br />
+      <button class="primary" type="submit">Train Voice</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Training Jobs</h2>
+    <table>
+      <thead><tr><th>Status</th><th>Voice</th><th>Steps</th><th>Created</th><th>Actions</th></tr></thead>
+      <tbody id="jobs"></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>Log</h2>
+    <div class="muted" id="selectedJob">Select a job to view logs.</div>
+    <pre id="log"></pre>
+  </div>
+</div>
+<script>
+const jobsEl = document.getElementById('jobs');
+const logEl = document.getElementById('log');
+const selectedJobEl = document.getElementById('selectedJob');
+let selectedJob = null;
+
+function stepsForQuality(q) {
+  if (q === 'fast') return 1000;
+  if (q === 'high') return 6000;
+  return 3000;
+}
+
+async function loadJobs() {
+  const res = await fetch('/api/jobs');
+  const jobs = await res.json();
+  jobsEl.innerHTML = jobs.map(j => `
+    <tr>
+      <td><span class="badge ${j.status}">${j.status}</span></td>
+      <td>${j.voiceName}</td>
+      <td>${j.steps}</td>
+      <td>${j.createdAt ? new Date(j.createdAt).toLocaleString() : ''}</td>
+      <td>
+        <button onclick="showLog('${j.id}', '${j.voiceName}')">Log</button>
+        ${j.status === 'SUCCESS' ? `<a href="/api/jobs/${j.id}/download"><button>Download JSON</button></a>` : ''}
+      </td>
+    </tr>`).join('');
+}
+
+async function showLog(id, name) {
+  selectedJob = id;
+  selectedJobEl.textContent = `Job: ${name} (${id})`;
+  const res = await fetch(`/api/jobs/${id}/log`);
+  logEl.textContent = await res.text();
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+document.getElementById('jobForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fd = new FormData();
+  fd.append('file', document.getElementById('file').files[0]);
+  fd.append('voiceName', document.getElementById('voiceName').value);
+  fd.append('steps', stepsForQuality(document.getElementById('quality').value));
+  fd.append('learningRate', document.getElementById('learningRate').value);
+  fd.append('referenceStyle', document.getElementById('referenceStyle').value);
+  const btn = e.target.querySelector('button[type=submit]');
+  btn.disabled = true;
+  try {
+    const res = await fetch('/api/jobs', { method: 'POST', body: fd });
+    if (!res.ok) throw new Error(await res.text());
+    const job = await res.json();
+    await loadJobs();
+    await showLog(job.id, job.voiceName);
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+setInterval(async () => {
+  await loadJobs();
+  if (selectedJob) await showLog(selectedJob, selectedJobEl.textContent);
+}, 5000);
+loadJobs();
+</script>
+</body>
+</html>
