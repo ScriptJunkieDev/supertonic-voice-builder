@@ -12,6 +12,8 @@ ghcr.io/scriptjunkiedev/java21-python-yolk:java_21_python
 
 Built from `pterodactyl/Dockerfile.yolk` (Java yolk + `python3`, `pip`, `git`, ffmpeg, libsndfile). Make the GHCR package **public** if the panel has no registry auth.
 
+Egg **installation** uses a sibling image `java21-python-yolk:java_21_python_install` (same Python, **root** user) so Wings can run `/mnt/install/install.sh`. The runtime server still uses `java_21_python` (`USER container`).
+
 ## 2. Import the egg
 
 1. Admin → **Nests** → import `pterodactyl/egg-java21-python.json`.
@@ -19,7 +21,7 @@ Built from `pterodactyl/Dockerfile.yolk` (Java yolk + `python3`, `pip`, `git`, f
 
 **Important:** Updating the egg JSON in the panel does **not** re-run install on existing servers. Use **Reinstall Server** (wipes `/home/container` except what install recreates) so the installation script runs and builds `venv/`.
 
-The install script is **inlined in the egg**. It runs in the **same Docker image as the server** (`java21-python-yolk`), not `installers:debian` (that image only has Python 3.9 and cannot install PyTorch 2.9). The script builds `./venv` and runs `pip` under `/mnt/server`.
+The install script is **inlined in the egg**. It runs in **`java21-python-yolk:java_21_python_install`** (root; same Python 3.10+ as the game container). Do **not** point installation at the runtime yolk tag — that image runs as `container` and Wings will fail with `install.sh: Permission denied`.
 
 Install creates:
 

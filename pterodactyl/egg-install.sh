@@ -1,19 +1,10 @@
 #!/bin/bash
-# Pterodactyl egg installation — use the SAME image as the running server (java21-python-yolk).
-# Debian installers:debian only ships Python 3.9; PyTorch 2.9 needs 3.10+.
-# /mnt/server is mounted as /home/container.
+# Pterodactyl egg installation — java21-python-yolk-install (root). /mnt/server = /home/container.
 set -euo pipefail
 cd /mnt/server
 
 echo "[egg] Python on install image: $(python3 --version 2>&1)"
-python3 -c 'import sys; v=sys.version_info; (v.major,v.minor) >= (3,10) or sys.exit("Need Python 3.10+ for torch 2.9 CPU wheels (rebuild/pull java21-python-yolk and reinstall server).")'
-
-if ! command -v curl >/dev/null 2>&1; then
-  export DEBIAN_FRONTEND=noninteractive
-  echo "[egg] Installing curl ..."
-  apt-get update -qq
-  apt-get install -y --no-install-recommends curl ca-certificates
-fi
+python3 -c 'import sys; (sys.version_info.major, sys.version_info.minor) >= (3, 10) or sys.exit("Need Python 3.10+ for torch 2.9")'
 
 mkdir -p data data/tmp voices
 export TMPDIR="/mnt/server/data/tmp"
