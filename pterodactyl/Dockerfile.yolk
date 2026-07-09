@@ -1,5 +1,6 @@
 # Extend Pterodactyl's Java 21 yolk with Python (generic runtime — no third-party trainer repos).
 # CI: .github/workflows/docker.yml → ghcr.io/<owner>/java21-python-yolk:java_21_python
+# Uses distro python3 only (no versioned python3.x packages — not available on all bases).
 
 FROM ghcr.io/pterodactyl/yolks:java_21
 
@@ -7,13 +8,9 @@ USER root
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        python3.12 \
-        python3.12-venv \
-        python3.12-full \
         python3 \
         python3-pip \
         python3-venv \
-        python3-full \
         git \
         ffmpeg \
         libsndfile1 \
@@ -21,7 +18,7 @@ RUN apt-get update \
         ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-ENV PYTHON_BIN=python3.12
+ENV PYTHON_BIN=python3
 
 USER container
 

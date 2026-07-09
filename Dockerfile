@@ -12,18 +12,15 @@ ENV DEBIAN_FRONTEND=noninteractive \
     TRAINER_DIR=./supertonic3-voice-clone \
     TRAINER_BACKUP_DIR=./trainer-backup \
     WORKER_SCRIPT=./worker/train_voice.py \
-    PYTHON_BIN=python3.12 \
+    PYTHON_BIN=python3 \
     OMP_NUM_THREADS=16 \
     MKL_NUM_THREADS=16 \
     PIP_USER_INSTALL=false
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3.12 python3.12-venv python3.12-full \
-    python3 python3-pip python3-venv python3-full \
+    python3 python3-pip python3-venv \
     git ffmpeg libsndfile1 build-essential curl ca-certificates \
     && rm -rf /var/lib/apt/lists/*
-
-ENV PYTHON_BIN=python3.12
 
 WORKDIR /app
 COPY --from=build /build/target/supertonic-voice-builder-0.1.0.jar /app/app.jar
