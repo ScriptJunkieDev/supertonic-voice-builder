@@ -1,15 +1,17 @@
 #!/usr/bin/env bash
-# Same logic as egg-install.sh (kept for manual runs / docs). Egg JSON inlines this via egg-install.sh.
+# Same as egg-install.sh — see egg-java21-python.json installation script.
 set -euo pipefail
 cd /mnt/server
 
-export DEBIAN_FRONTEND=noninteractive
-echo "[egg] Installing OS packages (python3, venv, pip, curl)..."
-apt-get update -qq
-apt-get install -y --no-install-recommends \
-  python3 python3-venv python3-pip curl ca-certificates \
-  ffmpeg libsndfile1 build-essential \
-  >/dev/null
+echo "[egg] Python on install image: $(python3 --version 2>&1)"
+python3 -c 'import sys; v=sys.version_info; (v.major,v.minor) >= (3,10) or sys.exit("Need Python 3.10+ for torch 2.9 CPU wheels (rebuild/pull java21-python-yolk and reinstall server).")'
+
+if ! command -v curl >/dev/null 2>&1; then
+  export DEBIAN_FRONTEND=noninteractive
+  echo "[egg] Installing curl ..."
+  apt-get update -qq
+  apt-get install -y --no-install-recommends curl ca-certificates
+fi
 
 mkdir -p data data/tmp voices
 export TMPDIR="/mnt/server/data/tmp"

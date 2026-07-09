@@ -19,7 +19,7 @@ Built from `pterodactyl/Dockerfile.yolk` (Java yolk + `python3`, `pip`, `git`, f
 
 **Important:** Updating the egg JSON in the panel does **not** re-run install on existing servers. Use **Reinstall Server** (wipes `/home/container` except what install recreates) so the installation script runs and builds `venv/`.
 
-The install script is **inlined in the egg** (not only at runtime). It runs inside `ghcr.io/pterodactyl/installers:debian`, uses `apt` to install Python 3, then creates `./venv` and runs `pip` under `/mnt/server`.
+The install script is **inlined in the egg**. It runs in the **same Docker image as the server** (`java21-python-yolk`), not `installers:debian` (that image only has Python 3.9 and cannot install PyTorch 2.9). The script builds `./venv` and runs `pip` under `/mnt/server`.
 
 Install creates:
 

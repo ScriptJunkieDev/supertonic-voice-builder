@@ -1,15 +1,19 @@
 #!/bin/bash
-# Pterodactyl egg installation — runs in installers:debian as root; writes to /mnt/server (= /home/container).
+# Pterodactyl egg installation — use the SAME image as the running server (java21-python-yolk).
+# Debian installers:debian only ships Python 3.9; PyTorch 2.9 needs 3.10+.
+# /mnt/server is mounted as /home/container.
 set -euo pipefail
 cd /mnt/server
 
-export DEBIAN_FRONTEND=noninteractive
-echo "[egg] Installing OS packages (python3, venv, pip, curl)..."
-apt-get update -qq
-apt-get install -y --no-install-recommends \
-  python3 python3-venv python3-pip curl ca-certificates \
-  ffmpeg libsndfile1 build-essential \
-  >/dev/null
+echo "[egg] Python on install image: $(python3 --version 2>&1)"
+python3 -c 'import sys; v=sys.version_info; (v.major,v.minor) >= (3,10) or sys.exit("Need Python 3.10+ for torch 2.9 CPU wheels (rebuild/pull java21-python-yolk and reinstall server).")'
+
+if ! command -v curl >/dev/null 2>&1; then
+  export DEBIAN_FRONTEND=noninteractive
+  echo "[egg] Installing curl ..."
+  apt-get update -qq
+  apt-get install -y --no-install-recommends curl ca-certificates
+fi
 
 mkdir -p data data/tmp voices
 export TMPDIR="/mnt/server/data/tmp"
