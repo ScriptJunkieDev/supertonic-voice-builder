@@ -10,17 +10,12 @@ spring:
 voice-builder:
   data-dir: ${VOICE_BUILDER_DATA_DIR:./data}
   output-dir: ${VOICE_BUILDER_OUTPUT_DIR:./voices}
-  python-bin: ${PYTHON_BIN:python3}
+  python-bin: ${PYTHON_BIN:./venv/bin/python3}
   trainer-dir: ${TRAINER_DIR:./supertonic3-voice-clone}
   trainer-git-url: ${TRAINER_GIT_URL:https://github.com/saurabhv749/supertonic3-voice-clone.git}
   trainer-archive-url: ${TRAINER_ARCHIVE_URL:https://github.com/saurabhv749/supertonic3-voice-clone/archive/refs/heads/main.zip}
   trainer-backup-dir: ${TRAINER_BACKUP_DIR:./trainer-backup}
-  trainer-requirements-path: ${TRAINER_REQUIREMENTS_PATH:./worker/trainer-pip-requirements.txt}
-  trainer-use-upstream-requirements: ${TRAINER_USE_UPSTREAM_REQUIREMENTS:false}
   trainer-bootstrap-enabled: ${TRAINER_BOOTSTRAP_ENABLED:true}
-  trainer-venv-dir: ${TRAINER_VENV_DIR:./data/trainer-venv}
-  trainer-install-min-free-bytes: ${TRAINER_INSTALL_MIN_FREE_BYTES:2500000000}
-  pip-user-install: ${PIP_USER_INSTALL:false}
   worker-script: ${WORKER_SCRIPT:./worker/train_voice.py}
   default-steps: ${DEFAULT_STEPS:3000}
   default-learning-rate: ${DEFAULT_LEARNING_RATE:0.0002}

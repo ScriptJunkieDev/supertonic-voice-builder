@@ -1,6 +1,6 @@
 # Pterodactyl: Java 21 + Python (generic egg)
 
-Generic runtime for Spring Boot apps that need **Java 21** and **Python 3**. The egg does **not** clone third-party repositories; your application handles that (this repo does via `TrainerBootstrapService` on startup).
+Generic runtime for Spring Boot apps that need **Java 21** and **Python 3**. The egg installs **PyTorch CPU + trainer pip deps** into `./venv`. The Java app does **not** run `pip`; it only clones `supertonic3-voice-clone` sources at startup.
 
 ## 1. Runtime image (yolk)
 
@@ -15,9 +15,14 @@ Built from `pterodactyl/Dockerfile.yolk` (Java yolk + `python3`, `pip`, `git`, f
 ## 2. Import the egg
 
 1. Admin → **Nests** → import `pterodactyl/egg-java21-python.json`.
-2. Create or reinstall a server using this egg.
+2. Create or **reinstall** a server using this egg (install runs `install-voice-builder-deps.sh` from GitHub `main`).
 
-Install only creates `data/` and a short `README.txt` — no trainer clone.
+Install creates:
+
+- `venv/` — PyTorch CPU stack (`worker/trainer-pip-requirements.txt`)
+- `data/`, `data/tmp`, `voices/`
+
+Everything stays under `/home/container` (install uses `TMPDIR=/mnt/server/data/tmp`).
 
 ## 3. Deploy Supertonic Voice Builder
 
@@ -26,9 +31,14 @@ Upload to `/home/container`:
 - `app.jar`
 - `worker/` (optional `trainer-backup/` if you vendor a trainer snapshot for offline use)
 
-Set app env in the panel (or `APP_ARGS`) — see root `.env.example` / README. Defaults use `./data`, `./voices`, `TRAINER_GIT_URL`, etc.
+Panel defaults:
 
-**Disk:** First-time pip install pulls large PyTorch CPU wheels. If you see `errno 28`, check **`/api/health`** field `diskDiagnostics` (and server logs) for `df -h` / `df -i` on `/home/container`, `data/`, and `/tmp` — unlimited panel assignment does not always mean a large **`/tmp`** tmpfs. Clear `data/trainer-venv`, `data/tmp`, and `trainer-venv` before retrying.
+- `PYTHON_BIN=./venv/bin/python3`
+- `JAR_FILE=app.jar`
+
+See root `.env.example` for trainer clone URLs and paths.
+
+If you previously used `data/trainer-venv` from an older app-side pip flow, remove it after switching to this egg.
 
 ## 4. Verify
 
@@ -36,7 +46,7 @@ Set app env in the panel (or `APP_ARGS`) — see root `.env.example` / README. D
 GET /api/health
 ```
 
-Check `trainerBootstrap`, `trainerPresent`, `pythonAvailable`.
+Check `trainerBootstrap`, `trainerPresent`, `pythonAvailable`, `diskFreeContainerMiB`.
 
 ## Appliance image (this app only)
 
@@ -44,4 +54,4 @@ Check `trainerBootstrap`, `trainerPresent`, `pythonAvailable`.
 ghcr.io/scriptjunkiedev/supertonic-voice-builder:latest
 ```
 
-Java + Python **runtime** only; trainer is fetched or restored from `trainer-backup/` at startup, not baked into the image build from upstream git.
+Java + Python **runtime** with `/app/venv` baked at image build; trainer sources are fetched or restored from `trainer-backup/` at startup, not cloned in the Docker build from upstream git.

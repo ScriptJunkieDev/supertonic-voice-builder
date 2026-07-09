@@ -12,10 +12,9 @@ ENV DEBIAN_FRONTEND=noninteractive \
     TRAINER_DIR=./supertonic3-voice-clone \
     TRAINER_BACKUP_DIR=./trainer-backup \
     WORKER_SCRIPT=./worker/train_voice.py \
-    PYTHON_BIN=python3 \
+    PYTHON_BIN=./venv/bin/python3 \
     OMP_NUM_THREADS=16 \
-    MKL_NUM_THREADS=16 \
-    PIP_USER_INSTALL=false
+    MKL_NUM_THREADS=16
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 python3-pip python3-venv \
@@ -23,6 +22,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
+COPY worker/trainer-pip-requirements.txt /tmp/trainer-pip-requirements.txt
+RUN python3 -m venv venv \
+    && venv/bin/pip install --no-cache-dir --upgrade pip setuptools wheel \
+    && venv/bin/pip install --no-cache-dir -r /tmp/trainer-pip-requirements.txt \
+    && rm /tmp/trainer-pip-requirements.txt
+
 COPY --from=build /build/target/supertonic-voice-builder-0.1.0.jar /app/app.jar
 COPY worker /app/worker
 COPY trainer-backup /app/trainer-backup

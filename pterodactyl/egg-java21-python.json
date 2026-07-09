@@ -1,5 +1,5 @@
 {
-    "_comment": "Generic Spring Boot Java 21 + Python 3 egg. Application supplies JAR and manages its own Python deps at runtime.",
+    "_comment": "Java 21 + Python egg for Supertonic Voice Builder. PyTorch deps install at egg reinstall, not in the Java app.",
     "meta": {
         "version": "PTDL_v2",
         "update_url": null
@@ -7,7 +7,7 @@
     "exported_at": "2026-07-09T10:18:08-04:00",
     "name": "Spring Boot (Java 21 + Python)",
     "author": "you@example.com",
-    "description": "Run a Spring Boot fat JAR with Java 21 and Python 3 on PATH. Upload your JAR to /home/container. The application is responsible for cloning or vendoring any Python projects it needs.",
+    "description": "Java 21 + Python 3. Egg install creates ./venv (PyTorch CPU). Upload app.jar + worker/. Java app only clones supertonic3-voice-clone sources at runtime.",
     "features": null,
     "docker_images": {
         "ghcr.io/scriptjunkiedev/java21-python-yolk:java_21_python": "ghcr.io/scriptjunkiedev/java21-python-yolk:java_21_python"
@@ -22,7 +22,7 @@
     },
     "scripts": {
         "installation": {
-            "script": "#!/bin/bash\nset -euo pipefail\ncd /mnt/server\nmkdir -p data\ncat > README.txt <<'EOF'\nSpring Boot (Java 21 + Python)\n\n1. Upload your fat JAR (default name: app.jar).\n2. Upload any companion files your app expects (e.g. worker scripts).\n3. Start the server from the panel.\n\nRuntime image includes: Java 21, python3, pip, git.\nYour Spring Boot app should install or clone Python dependencies at startup if needed.\n\nPort: set SERVER_PORT in the panel allocation; startup passes --server.port.\nEOF\necho \"Install complete.\"\n",
+            "script": "#!/bin/bash\nset -euo pipefail\ncd /mnt/server\necho \"Running Supertonic Voice Builder egg install (./venv + pip deps)...\"\ncurl -fsSL https://raw.githubusercontent.com/ScriptJunkieDev/supertonic-voice-builder/main/pterodactyl/install-voice-builder-deps.sh | bash\necho \"Egg install finished.\"\n",
             "container": "ghcr.io/pterodactyl/installers:debian",
             "entrypoint": "bash"
         }
@@ -60,9 +60,9 @@
         },
         {
             "name": "Python binary",
-            "description": "Python executable on PATH for apps that shell out to Python.",
+            "description": "Python for training (egg install creates ./venv).",
             "env_variable": "PYTHON_BIN",
-            "default_value": "python3",
+            "default_value": "./venv/bin/python3",
             "user_viewable": true,
             "user_editable": true,
             "rules": "required|string",

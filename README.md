@@ -20,14 +20,19 @@ This project wraps that flow in Spring Boot and a small Python worker.
 
 Docker images and the Pterodactyl egg are **generic Java + Python runtimes**. They do **not** clone the upstream trainer at image build time.
 
-On startup, `TrainerBootstrapService`:
+On startup, `TrainerBootstrapService` only fetches **trainer source files** (no `pip`):
 
 1. Uses `TRAINER_DIR` if `train_style.py` already exists  
 2. Else `git clone` from `TRAINER_GIT_URL`  
-3. Else copies from `TRAINER_BACKUP_DIR` (optional local vendor snapshot — see [`trainer-backup/README.md`](trainer-backup/README.md))  
-4. Runs `pip install -r requirements.txt` when Python and that file are available  
+3. Else downloads `TRAINER_ARCHIVE_URL` zip into `data/tmp`  
+4. Else copies from `TRAINER_BACKUP_DIR` (optional local vendor snapshot — see [`trainer-backup/README.md`](trainer-backup/README.md))  
 
-Check `GET /api/health` for `trainerBootstrap` / `trainerPresent`.
+**PyTorch and other Python deps** are installed outside the app:
+
+- **Pterodactyl:** egg install script → `./venv` (see `pterodactyl/install-voice-builder-deps.sh`)  
+- **Docker appliance:** image build creates `/app/venv` from `worker/trainer-pip-requirements.txt`  
+
+Check `GET /api/health` for `trainerBootstrap` / `trainerPresent` / `pythonAvailable`.
 
 ## Requirements
 
@@ -57,7 +62,7 @@ See `.env.example`. Important variables:
 | `TRAINER_BACKUP_DIR` | Local vendor copy if clone fails (default `./trainer-backup`) |
 | `TRAINER_DIR` | Where `train_style.py` lives after bootstrap |
 | `TRAINER_BOOTSTRAP_ENABLED` | Set `false` if you manage trainer files yourself |
-| `PIP_USER_INSTALL` | `true` on Ptero; `false` in Docker (see `.env.example`) |
+| `PYTHON_BIN` | Default `./venv/bin/python3` (egg or Docker image) |
 
 ## Docker images (GitHub Actions)
 

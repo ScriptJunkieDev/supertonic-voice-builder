@@ -18,12 +18,7 @@ public class VoiceBuilderProperties {
     private String trainerGitUrl;
     private String trainerArchiveUrl;
     private String trainerBackupDir;
-    private String trainerRequirementsPath;
-    private boolean trainerUseUpstreamRequirements;
     private boolean trainerBootstrapEnabled = true;
-    private boolean pipUserInstall = true;
-    private String trainerVenvDir;
-    private long trainerInstallMinFreeBytes = 2_500_000_000L;
     private int defaultSteps;
     private double defaultLearningRate;
     private int maxConcurrentJobs;
@@ -44,22 +39,8 @@ public class VoiceBuilderProperties {
     public void setTrainerArchiveUrl(String trainerArchiveUrl) { this.trainerArchiveUrl = trainerArchiveUrl; }
     public String getTrainerBackupDir() { return trainerBackupDir; }
     public void setTrainerBackupDir(String trainerBackupDir) { this.trainerBackupDir = trainerBackupDir; }
-    public String getTrainerRequirementsPath() { return trainerRequirementsPath; }
-    public void setTrainerRequirementsPath(String trainerRequirementsPath) { this.trainerRequirementsPath = trainerRequirementsPath; }
-    public boolean isTrainerUseUpstreamRequirements() { return trainerUseUpstreamRequirements; }
-    public void setTrainerUseUpstreamRequirements(boolean trainerUseUpstreamRequirements) {
-        this.trainerUseUpstreamRequirements = trainerUseUpstreamRequirements;
-    }
     public boolean isTrainerBootstrapEnabled() { return trainerBootstrapEnabled; }
     public void setTrainerBootstrapEnabled(boolean trainerBootstrapEnabled) { this.trainerBootstrapEnabled = trainerBootstrapEnabled; }
-    public boolean isPipUserInstall() { return pipUserInstall; }
-    public void setPipUserInstall(boolean pipUserInstall) { this.pipUserInstall = pipUserInstall; }
-    public String getTrainerVenvDir() { return trainerVenvDir; }
-    public void setTrainerVenvDir(String trainerVenvDir) { this.trainerVenvDir = trainerVenvDir; }
-    public long getTrainerInstallMinFreeBytes() { return trainerInstallMinFreeBytes; }
-    public void setTrainerInstallMinFreeBytes(long trainerInstallMinFreeBytes) {
-        this.trainerInstallMinFreeBytes = trainerInstallMinFreeBytes;
-    }
     public int getDefaultSteps() { return defaultSteps; }
     public void setDefaultSteps(int defaultSteps) { this.defaultSteps = defaultSteps; }
     public double getDefaultLearningRate() { return defaultLearningRate; }
@@ -75,9 +56,20 @@ public class VoiceBuilderProperties {
         workerScript = VoiceBuilderPaths.resolveDirectory(root, workerScript);
         trainerDir = VoiceBuilderPaths.resolveDirectory(root, trainerDir);
         trainerBackupDir = VoiceBuilderPaths.resolveDirectory(root, trainerBackupDir);
-        trainerRequirementsPath = VoiceBuilderPaths.resolveDirectory(root, trainerRequirementsPath);
-        trainerVenvDir = VoiceBuilderPaths.resolveDirectory(root, trainerVenvDir);
-        pythonBin = VoiceBuilderPaths.resolvePythonBin(pythonBin);
+        Path configuredPython = Path.of(pythonBin != null ? pythonBin : "");
+        if (!configuredPython.isAbsolute()) {
+            configuredPython = root.resolve(pythonBin != null ? pythonBin : "python3").normalize();
+        }
+        if (Files.isExecutable(configuredPython)) {
+            pythonBin = configuredPython.toString();
+        } else {
+            Path eggVenv = root.resolve("venv/bin/python3").normalize();
+            if (Files.isExecutable(eggVenv)) {
+                pythonBin = eggVenv.toString();
+            } else {
+                pythonBin = VoiceBuilderPaths.resolvePythonBin(pythonBin);
+            }
+        }
     }
 
     public boolean isPythonAvailable() {

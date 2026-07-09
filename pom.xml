@@ -39,13 +39,6 @@
             <resource>
                 <directory>src/main/resources</directory>
             </resource>
-            <resource>
-                <directory>worker</directory>
-                <includes>
-                    <include>trainer-pip-requirements.txt</include>
-                </includes>
-                <targetPath>trainer</targetPath>
-            </resource>
         </resources>
         <plugins>
             <plugin>

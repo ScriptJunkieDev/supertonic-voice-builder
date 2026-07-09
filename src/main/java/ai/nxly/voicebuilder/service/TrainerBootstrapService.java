@@ -1,6 +1,5 @@
 package ai.nxly.voicebuilder.service;
 
-import ai.nxly.voicebuilder.config.DiskDiagnostics;
 import ai.nxly.voicebuilder.config.VoiceBuilderPaths;
 import ai.nxly.voicebuilder.config.VoiceBuilderProperties;
 import org.slf4j.Logger;
@@ -13,12 +12,12 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -56,7 +55,7 @@ public class TrainerBootstrapService {
             return;
         }
         try {
-            ensureTrainerReady();
+            ensureTrainerSourcesReady();
             status.set("ready");
             detail.set("train_style.py is available at " + props.getTrainerDir());
         } catch (IOException | InterruptedException e) {
@@ -78,12 +77,11 @@ public class TrainerBootstrapService {
         return props.isTrainerPresent();
     }
 
-    private void ensureTrainerReady() throws IOException, InterruptedException {
+    private void ensureTrainerSourcesReady() throws IOException, InterruptedException {
         Path trainerDir = Path.of(props.getTrainerDir());
         Path trainScript = trainerDir.resolve("train_style.py");
         if (Files.isRegularFile(trainScript)) {
             log.info("Trainer already present at {}", trainScript);
-            installPythonRequirements(trainerDir);
             return;
         }
 
@@ -130,12 +128,9 @@ public class TrainerBootstrapService {
 
         if (!Files.isRegularFile(trainScript)) {
             throw new IOException(
-                    "Could not provision trainer at " + trainScript + ". Attempts: " + String.join("; ", attempts)
-                            + ". Set TRAINER_GIT_URL / TRAINER_ARCHIVE_URL or populate " + props.getTrainerBackupDir()
-                            + " (see trainer-backup/README.md).");
+                    "Could not provision trainer sources at " + trainScript + ". Attempts: " + String.join("; ", attempts)
+                            + ". Python deps belong in ./venv from egg install; the app only fetches trainer sources.");
         }
-
-        installPythonRequirements(trainerDir);
     }
 
     private void cloneTrainerRepo(String url, Path trainerDir) throws IOException, InterruptedException {
@@ -150,8 +145,10 @@ public class TrainerBootstrapService {
     }
 
     private void downloadAndExtractArchive(String url, Path trainerDir) throws IOException {
-        Path tempZip = Files.createTempFile("trainer-archive-", ".zip");
-        Path staging = Files.createTempDirectory("trainer-staging-");
+        Path tmpDir = Path.of(props.getDataDir(), "tmp");
+        Files.createDirectories(tmpDir);
+        Path tempZip = tmpDir.resolve("trainer-archive-" + UUID.randomUUID() + ".zip");
+        Path staging = tmpDir.resolve("trainer-staging-" + UUID.randomUUID());
         try {
             try (InputStream in = URI.create(url).toURL().openStream()) {
                 Files.copy(in, tempZip, StandardCopyOption.REPLACE_EXISTING);
@@ -164,7 +161,9 @@ public class TrainerBootstrapService {
             if (Files.exists(trainerDir)) {
                 deleteRecursive(trainerDir);
             }
-            Files.createDirectories(trainerDir.getParent());
+            if (trainerDir.getParent() != null) {
+                Files.createDirectories(trainerDir.getParent());
+            }
             copyTree(sourceRoot, trainerDir);
         } finally {
             Files.deleteIfExists(tempZip);
@@ -199,175 +198,6 @@ public class TrainerBootstrapService {
                 }
                 zis.closeEntry();
             }
-        }
-    }
-
-    private void installPythonRequirements(Path trainerDir) throws IOException, InterruptedException {
-        Path requirements = resolvePipRequirementsFile(trainerDir);
-        if (!Files.isRegularFile(requirements) || !props.isPythonAvailable()) {
-            log.warn("Skipping pip install; requirements file missing or Python unavailable ({})", requirements);
-            return;
-        }
-        Path venvDir = Path.of(props.getTrainerVenvDir());
-        Path venvPython = resolveVenvPython(venvDir);
-        if (!Files.isExecutable(venvPython)) {
-            log.info("Creating trainer venv at {} with {}", venvDir, props.getPythonBin());
-            Files.createDirectories(venvDir.getParent() != null ? venvDir.getParent() : venvDir);
-            runProcess(List.of(props.getPythonBin(), "-m", "venv", venvDir.toString()), VoiceBuilderPaths.appRoot());
-            venvPython = resolveVenvPython(venvDir);
-            if (!Files.isExecutable(venvPython)) {
-                throw new IOException("Failed to create venv at " + venvDir);
-            }
-        }
-        Path venvPip = venvDir.resolve(isWindows() ? "Scripts/pip.exe" : "bin/pip");
-        if (!Files.isExecutable(venvPip)) {
-            venvPip = venvDir.resolve(isWindows() ? "Scripts/pip" : "bin/pip3");
-        }
-        runProcess(List.of(venvPip.toString(), "install", "--no-cache-dir", "--upgrade", "pip", "setuptools", "wheel"), trainerDir, true);
-        List<String> cmd = new ArrayList<>();
-        cmd.add(venvPip.toString());
-        cmd.add("install");
-        cmd.add("--no-cache-dir");
-        cmd.add("-r");
-        cmd.add(requirements.toString());
-        log.info("Installing trainer Python requirements into venv {} from {}", venvDir, requirements);
-        logFilesystemDiagnostics(venvDir);
-        warnIfLowDisk(venvDir);
-        runProcess(cmd, trainerDir, true);
-        props.setPythonBin(venvPython.toString());
-        log.info("Training will use Python from venv: {}", venvPython);
-    }
-
-    private Path resolvePipRequirementsFile(Path trainerDir) throws IOException {
-        List<Path> candidates = new ArrayList<>();
-        String configured = props.getTrainerRequirementsPath();
-        if (configured != null && !configured.isBlank()) {
-            candidates.add(Path.of(configured.trim()));
-        }
-        Path workerFile = VoiceBuilderPaths.appRoot().resolve("worker/trainer-pip-requirements.txt");
-        candidates.add(workerFile);
-
-        for (Path candidate : candidates) {
-            if (Files.isRegularFile(candidate)) {
-                log.info("Using pip requirements file {}", candidate.toAbsolutePath());
-                return candidate.normalize();
-            }
-        }
-
-        Path fromJar = materializeBundledRequirementsFile();
-        if (Files.isRegularFile(fromJar)) {
-            log.info("Using bundled pip requirements file {}", fromJar.toAbsolutePath());
-            return fromJar;
-        }
-
-        if (props.isTrainerUseUpstreamRequirements()) {
-            Path upstream = trainerDir.resolve("requirements.txt");
-            if (Files.isRegularFile(upstream)) {
-                log.warn("Using upstream trainer requirements.txt from {} (TRAINER_USE_UPSTREAM_REQUIREMENTS=true)", upstream);
-                return upstream;
-            }
-        }
-
-        throw new IOException(
-                "No pip requirements file found. Deploy worker/trainer-pip-requirements.txt or redeploy a current app.jar "
-                        + "(bundled copy is extracted under data/bootstrap/). Upstream requirements.txt is not used by default.");
-    }
-
-    private Path materializeBundledRequirementsFile() throws IOException {
-        try (InputStream in = getClass().getResourceAsStream("/trainer/trainer-pip-requirements.txt")) {
-            if (in == null) {
-                return null;
-            }
-            Path out = Path.of(props.getDataDir(), "bootstrap", "trainer-pip-requirements.txt");
-            Files.createDirectories(out.getParent());
-            Files.copy(in, out, StandardCopyOption.REPLACE_EXISTING);
-            return out;
-        }
-    }
-
-    private static Path resolveVenvPython(Path venvDir) {
-        if (isWindows()) {
-            Path py = venvDir.resolve("Scripts/python.exe");
-            return Files.isExecutable(py) ? py : venvDir.resolve("Scripts/python");
-        }
-        Path py3 = venvDir.resolve("bin/python3");
-        return Files.isExecutable(py3) ? py3 : venvDir.resolve("bin/python");
-    }
-
-    private static boolean isWindows() {
-        return System.getProperty("os.name", "").toLowerCase().contains("win");
-    }
-
-    private void logFilesystemDiagnostics(Path venvDir) {
-        String summary = DiskDiagnostics.summarize(
-                VoiceBuilderPaths.appRoot(),
-                Path.of(props.getDataDir()),
-                venvDir,
-                Path.of("/tmp"));
-        lastDiskDiagnostics = summary;
-        log.info("Filesystem diagnostics before pip install:\n{}", summary);
-    }
-
-    private void warnIfLowDisk(Path venvDir) {
-        try {
-            long containerFree = VoiceBuilderPaths.usableBytes(VoiceBuilderPaths.appRoot());
-            long dataFree = VoiceBuilderPaths.usableBytes(Path.of(props.getDataDir()));
-            long min = props.getTrainerInstallMinFreeBytes();
-            long effective = Math.min(containerFree, dataFree > 0 ? dataFree : containerFree);
-            if (effective < min) {
-                log.warn(
-                        "Low free space reported for install path (~{} MiB; suggested ~{} MiB for PyTorch CPU). "
-                                + "If pip fails with errno 28, check df output above (tmp mount, inodes, or stale partial downloads).",
-                        effective / 1024 / 1024, min / 1024 / 1024);
-            }
-        } catch (IOException e) {
-            log.warn("Could not read free disk space: {}", e.getMessage());
-        }
-    }
-
-    private volatile String lastDiskDiagnostics = "";
-
-    public String getLastDiskDiagnostics() {
-        return lastDiskDiagnostics;
-    }
-
-    private Path pipTempRoot() throws IOException {
-        Path tmp = Path.of(props.getDataDir(), "tmp");
-        Files.createDirectories(tmp);
-        return tmp;
-    }
-
-    private void runProcess(List<String> cmd, Path workDir, boolean pip) throws IOException, InterruptedException {
-        ProcessBuilder pb = new ProcessBuilder(cmd);
-        pb.directory(workDir.toFile());
-        pb.redirectErrorStream(true);
-        if (pip) {
-            Path tmp = pipTempRoot();
-            pb.environment().put("TMPDIR", tmp.toString());
-            pb.environment().put("PIP_CACHE_DIR", tmp.resolve("pip-cache").toString());
-            pb.environment().put("PIP_NO_CACHE_DIR", "1");
-        }
-        Process process = pb.start();
-        StringBuilder out = new StringBuilder();
-        try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                out.append(line).append(System.lineSeparator());
-            }
-        }
-        int code = process.waitFor();
-        if (code != 0) {
-            String message = "Command failed (" + code + "): " + String.join(" ", cmd)
-                    + System.lineSeparator() + out;
-            if (out.toString().contains("No space left on device")) {
-                logFilesystemDiagnostics(Path.of(props.getTrainerVenvDir()));
-                message += System.lineSeparator()
-                        + "errno 28: a filesystem refused the write (not always the panel disk slider). "
-                        + "See startup log/health diskDiagnostics for df -h and df -i (common: small /tmp tmpfs, inode exhaustion, or leftover pip partials). "
-                        + "Try: rm -rf data/trainer-venv data/tmp trainer-venv && restart with current app.jar (pip uses data/tmp for TMPDIR).";
-            }
-            throw new IOException(message);
         }
     }
 

@@ -95,7 +95,7 @@ public class TrainingService {
             if (!props.isPythonAvailable()) {
                 throw new IOException(
                         "Python was not found (PYTHON_BIN=" + props.getPythonBin()
-                                + "). Install Python 3 on the server or set PYTHON_BIN to a full path.");
+                                + "). Reinstall the server egg to create ./venv, or set PYTHON_BIN to ./venv/bin/python3.");
             }
             if (!props.isWorkerScriptPresent()) {
                 throw new IOException("Worker script not found: " + props.getWorkerScript());
