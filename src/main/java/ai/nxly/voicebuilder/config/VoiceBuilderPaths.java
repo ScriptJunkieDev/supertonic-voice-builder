@@ -1,6 +1,7 @@
 package ai.nxly.voicebuilder.config;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -70,5 +71,16 @@ public final class VoiceBuilderPaths {
 
     public static boolean isRunnableExecutable(String bin) {
         return executablePath(bin).isPresent();
+    }
+
+    public static long usableBytes(Path path) throws IOException {
+        Path probe = path.toAbsolutePath().normalize();
+        while (probe != null && !Files.exists(probe)) {
+            probe = probe.getParent();
+        }
+        if (probe == null) {
+            return 0L;
+        }
+        return Files.getFileStore(probe).getUsableSpace();
     }
 }

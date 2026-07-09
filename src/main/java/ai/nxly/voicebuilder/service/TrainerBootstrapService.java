@@ -222,14 +222,16 @@ public class TrainerBootstrapService {
         if (!Files.isExecutable(venvPip)) {
             venvPip = venvDir.resolve(isWindows() ? "Scripts/pip" : "bin/pip3");
         }
-        runProcess(List.of(venvPip.toString(), "install", "--upgrade", "pip", "setuptools", "wheel"), trainerDir);
+        runProcess(List.of(venvPip.toString(), "install", "--no-cache-dir", "--upgrade", "pip", "setuptools", "wheel"), trainerDir, true);
         List<String> cmd = new ArrayList<>();
         cmd.add(venvPip.toString());
         cmd.add("install");
+        cmd.add("--no-cache-dir");
         cmd.add("-r");
         cmd.add(requirements.toString());
         log.info("Installing trainer Python requirements into venv {} from {}", venvDir, requirements);
-        runProcess(cmd, trainerDir);
+        assertDiskSpaceForTrainerInstall(venvDir);
+        runProcess(cmd, trainerDir, true);
         props.setPythonBin(venvPython.toString());
         log.info("Training will use Python from venv: {}", venvPython);
     }
@@ -292,6 +294,59 @@ public class TrainerBootstrapService {
 
     private static boolean isWindows() {
         return System.getProperty("os.name", "").toLowerCase().contains("win");
+    }
+
+    private void assertDiskSpaceForTrainerInstall(Path venvDir) throws IOException {
+        long containerFree = VoiceBuilderPaths.usableBytes(VoiceBuilderPaths.appRoot());
+        long dataFree = VoiceBuilderPaths.usableBytes(Path.of(props.getDataDir()));
+        long min = props.getTrainerInstallMinFreeBytes();
+        log.info("Disk free (container root): {} MiB; data dir: {} MiB; need ~{} MiB for PyTorch CPU deps",
+                containerFree / 1024 / 1024, dataFree / 1024 / 1024, min / 1024 / 1024);
+        long effective = Math.min(containerFree, dataFree > 0 ? dataFree : containerFree);
+        if (effective < min) {
+            throw new IOException(
+                    "Not enough disk space on this Pterodactyl server volume (~" + effective / 1024 / 1024
+                            + " MiB free). Node-wide disk can look fine in the panel while this instance still has a quota. "
+                            + "Raise the server's Disk Space limit (often 3–5 GiB+ for torch), then rm -rf trainer-venv data/tmp data/pip-cache and restart.");
+        }
+    }
+
+    private Path pipTempRoot() throws IOException {
+        Path tmp = Path.of(props.getDataDir(), "tmp");
+        Files.createDirectories(tmp);
+        return tmp;
+    }
+
+    private void runProcess(List<String> cmd, Path workDir, boolean pip) throws IOException, InterruptedException {
+        ProcessBuilder pb = new ProcessBuilder(cmd);
+        pb.directory(workDir.toFile());
+        pb.redirectErrorStream(true);
+        if (pip) {
+            Path tmp = pipTempRoot();
+            pb.environment().put("TMPDIR", tmp.toString());
+            pb.environment().put("PIP_CACHE_DIR", tmp.resolve("pip-cache").toString());
+            pb.environment().put("PIP_NO_CACHE_DIR", "1");
+        }
+        Process process = pb.start();
+        StringBuilder out = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                out.append(line).append(System.lineSeparator());
+            }
+        }
+        int code = process.waitFor();
+        if (code != 0) {
+            String message = "Command failed (" + code + "): " + String.join(" ", cmd)
+                    + System.lineSeparator() + out;
+            if (out.toString().contains("No space left on device")) {
+                message += System.lineSeparator()
+                        + "Hint: this is usually the Pterodactyl server disk quota on /home/container, not total node storage. "
+                        + "Increase server Disk Space, delete trainer-venv and data/tmp, then restart.";
+            }
+            throw new IOException(message);
+        }
     }
 
     private static void runProcess(List<String> cmd, Path workDir) throws IOException, InterruptedException {

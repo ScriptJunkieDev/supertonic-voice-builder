@@ -18,7 +18,8 @@ voice-builder:
   trainer-requirements-path: ${TRAINER_REQUIREMENTS_PATH:./worker/trainer-pip-requirements.txt}
   trainer-use-upstream-requirements: ${TRAINER_USE_UPSTREAM_REQUIREMENTS:false}
   trainer-bootstrap-enabled: ${TRAINER_BOOTSTRAP_ENABLED:true}
-  trainer-venv-dir: ${TRAINER_VENV_DIR:./trainer-venv}
+  trainer-venv-dir: ${TRAINER_VENV_DIR:./data/trainer-venv}
+  trainer-install-min-free-bytes: ${TRAINER_INSTALL_MIN_FREE_BYTES:2500000000}
   pip-user-install: ${PIP_USER_INSTALL:false}
   worker-script: ${WORKER_SCRIPT:./worker/train_voice.py}
   default-steps: ${DEFAULT_STEPS:3000}

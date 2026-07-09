@@ -1,5 +1,6 @@
 package ai.nxly.voicebuilder.controller;
 
+import ai.nxly.voicebuilder.config.VoiceBuilderPaths;
 import ai.nxly.voicebuilder.config.VoiceBuilderProperties;
 import ai.nxly.voicebuilder.service.TrainerBootstrapService;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -37,6 +38,14 @@ public class HealthController {
         body.put("trainerGitUrl", props.getTrainerGitUrl());
         body.put("trainerArchiveUrl", props.getTrainerArchiveUrl());
         body.put("trainerBackupDir", props.getTrainerBackupDir());
+        body.put("trainerVenvDir", props.getTrainerVenvDir());
+        try {
+            body.put("diskFreeContainerMiB", VoiceBuilderPaths.usableBytes(VoiceBuilderPaths.appRoot()) / 1024 / 1024);
+            body.put("diskFreeDataMiB", VoiceBuilderPaths.usableBytes(java.nio.file.Path.of(props.getDataDir())) / 1024 / 1024);
+        } catch (Exception ignored) {
+            body.put("diskFreeContainerMiB", -1);
+            body.put("diskFreeDataMiB", -1);
+        }
         return body;
     }
 }

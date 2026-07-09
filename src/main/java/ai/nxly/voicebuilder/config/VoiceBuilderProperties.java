@@ -23,6 +23,7 @@ public class VoiceBuilderProperties {
     private boolean trainerBootstrapEnabled = true;
     private boolean pipUserInstall = true;
     private String trainerVenvDir;
+    private long trainerInstallMinFreeBytes = 2_500_000_000L;
     private int defaultSteps;
     private double defaultLearningRate;
     private int maxConcurrentJobs;
@@ -55,6 +56,10 @@ public class VoiceBuilderProperties {
     public void setPipUserInstall(boolean pipUserInstall) { this.pipUserInstall = pipUserInstall; }
     public String getTrainerVenvDir() { return trainerVenvDir; }
     public void setTrainerVenvDir(String trainerVenvDir) { this.trainerVenvDir = trainerVenvDir; }
+    public long getTrainerInstallMinFreeBytes() { return trainerInstallMinFreeBytes; }
+    public void setTrainerInstallMinFreeBytes(long trainerInstallMinFreeBytes) {
+        this.trainerInstallMinFreeBytes = trainerInstallMinFreeBytes;
+    }
     public int getDefaultSteps() { return defaultSteps; }
     public void setDefaultSteps(int defaultSteps) { this.defaultSteps = defaultSteps; }
     public double getDefaultLearningRate() { return defaultLearningRate; }

@@ -28,6 +28,8 @@ Upload to `/home/container`:
 
 Set app env in the panel (or `APP_ARGS`) — see root `.env.example` / README. Defaults use `./data`, `./voices`, `TRAINER_GIT_URL`, etc.
 
+**Disk:** The trainer venv (PyTorch CPU, etc.) needs about **3–5 GiB** free on this server’s `/home/container` volume. The node-wide disk chart can look empty while the instance still has a **per-server disk quota** — increase **Disk Space** on the server, then remove `data/trainer-venv`, `data/tmp`, and restart.
+
 ## 4. Verify
 
 ```text
