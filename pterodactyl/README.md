@@ -15,7 +15,11 @@ Built from `pterodactyl/Dockerfile.yolk` (Java yolk + `python3`, `pip`, `git`, f
 ## 2. Import the egg
 
 1. Admin → **Nests** → import `pterodactyl/egg-java21-python.json`.
-2. Create or **reinstall** a server using this egg (install runs `install-voice-builder-deps.sh` from GitHub `main`).
+2. Create or **reinstall** a server using this egg.
+
+**Important:** Updating the egg JSON in the panel does **not** re-run install on existing servers. Use **Reinstall Server** (wipes `/home/container` except what install recreates) so the installation script runs and builds `venv/`.
+
+The install script is **inlined in the egg** (not only at runtime). It runs inside `ghcr.io/pterodactyl/installers:debian`, uses `apt` to install Python 3, then creates `./venv` and runs `pip` under `/mnt/server`.
 
 Install creates:
 

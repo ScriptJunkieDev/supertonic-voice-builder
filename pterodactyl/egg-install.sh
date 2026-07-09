@@ -1,5 +1,5 @@
-#!/usr/bin/env bash
-# Same logic as egg-install.sh (kept for manual runs / docs). Egg JSON inlines this via egg-install.sh.
+#!/bin/bash
+# Pterodactyl egg installation — runs in installers:debian as root; writes to /mnt/server (= /home/container).
 set -euo pipefail
 cd /mnt/server
 
