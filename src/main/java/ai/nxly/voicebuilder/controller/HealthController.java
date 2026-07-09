@@ -35,6 +35,7 @@ public class HealthController {
         body.put("trainerBootstrap", trainerBootstrap.getStatus());
         body.put("trainerBootstrapDetail", trainerBootstrap.getDetail());
         body.put("trainerGitUrl", props.getTrainerGitUrl());
+        body.put("trainerArchiveUrl", props.getTrainerArchiveUrl());
         body.put("trainerBackupDir", props.getTrainerBackupDir());
         return body;
     }

@@ -19,5 +19,6 @@ At runtime the app will:
 
 1. Use `TRAINER_DIR` if `train_style.py` is already there  
 2. Else `git clone` from `TRAINER_GIT_URL`  
-3. Else copy from `trainer-backup/`  
-4. Run `pip install -r requirements.txt` when Python and that file are available  
+3. Else download `TRAINER_ARCHIVE_URL` (GitHub zip over HTTPS — works when `git` is blocked)  
+4. Else copy from `trainer-backup/`  
+5. Run `pip install -r requirements.txt` when Python and that file are available  

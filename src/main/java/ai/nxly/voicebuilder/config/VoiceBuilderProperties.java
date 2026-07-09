@@ -16,9 +16,11 @@ public class VoiceBuilderProperties {
     private String trainerDir;
     private String workerScript;
     private String trainerGitUrl;
+    private String trainerArchiveUrl;
     private String trainerBackupDir;
     private boolean trainerBootstrapEnabled = true;
     private boolean pipUserInstall = true;
+    private String trainerVenvDir;
     private int defaultSteps;
     private double defaultLearningRate;
     private int maxConcurrentJobs;
@@ -35,12 +37,16 @@ public class VoiceBuilderProperties {
     public void setWorkerScript(String workerScript) { this.workerScript = workerScript; }
     public String getTrainerGitUrl() { return trainerGitUrl; }
     public void setTrainerGitUrl(String trainerGitUrl) { this.trainerGitUrl = trainerGitUrl; }
+    public String getTrainerArchiveUrl() { return trainerArchiveUrl; }
+    public void setTrainerArchiveUrl(String trainerArchiveUrl) { this.trainerArchiveUrl = trainerArchiveUrl; }
     public String getTrainerBackupDir() { return trainerBackupDir; }
     public void setTrainerBackupDir(String trainerBackupDir) { this.trainerBackupDir = trainerBackupDir; }
     public boolean isTrainerBootstrapEnabled() { return trainerBootstrapEnabled; }
     public void setTrainerBootstrapEnabled(boolean trainerBootstrapEnabled) { this.trainerBootstrapEnabled = trainerBootstrapEnabled; }
     public boolean isPipUserInstall() { return pipUserInstall; }
     public void setPipUserInstall(boolean pipUserInstall) { this.pipUserInstall = pipUserInstall; }
+    public String getTrainerVenvDir() { return trainerVenvDir; }
+    public void setTrainerVenvDir(String trainerVenvDir) { this.trainerVenvDir = trainerVenvDir; }
     public int getDefaultSteps() { return defaultSteps; }
     public void setDefaultSteps(int defaultSteps) { this.defaultSteps = defaultSteps; }
     public double getDefaultLearningRate() { return defaultLearningRate; }
@@ -56,6 +62,7 @@ public class VoiceBuilderProperties {
         workerScript = VoiceBuilderPaths.resolveDirectory(root, workerScript);
         trainerDir = VoiceBuilderPaths.resolveDirectory(root, trainerDir);
         trainerBackupDir = VoiceBuilderPaths.resolveDirectory(root, trainerBackupDir);
+        trainerVenvDir = VoiceBuilderPaths.resolveDirectory(root, trainerVenvDir);
         pythonBin = VoiceBuilderPaths.resolvePythonBin(pythonBin);
     }
 

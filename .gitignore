@@ -15,6 +15,8 @@ data/
 voices/
 supertonic3-voice-clone/
 
+trainer-venv/
+
 # Optional local trainer snapshot (see trainer-backup/README.md)
 trainer-backup/**
 !trainer-backup/README.md

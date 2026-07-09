@@ -21,11 +21,13 @@ public class TrainingService {
 
     private final VoiceBuilderProperties props;
     private final JobStore store;
+    private final TrainerBootstrapService trainerBootstrap;
     private final ExecutorService executor;
 
-    public TrainingService(VoiceBuilderProperties props, JobStore store) {
+    public TrainingService(VoiceBuilderProperties props, JobStore store, TrainerBootstrapService trainerBootstrap) {
         this.props = props;
         this.store = store;
+        this.trainerBootstrap = trainerBootstrap;
         this.executor = Executors.newFixedThreadPool(Math.max(1, props.getMaxConcurrentJobs()));
     }
 
@@ -98,10 +100,19 @@ public class TrainingService {
             if (!props.isWorkerScriptPresent()) {
                 throw new IOException("Worker script not found: " + props.getWorkerScript());
             }
+
+            append(log, "Ensuring trainer is provisioned under TRAINER_DIR=" + props.getTrainerDir() + System.lineSeparator());
+            try {
+                trainerBootstrap.prepareTrainer();
+            } catch (Exception e) {
+                throw new IOException(
+                        "Trainer bootstrap failed: " + e.getMessage()
+                                + " (see /api/health trainerBootstrapDetail)", e);
+            }
             if (!props.isTrainerPresent()) {
                 throw new IOException(
-                        "train_style.py not found under TRAINER_DIR=" + props.getTrainerDir()
-                                + ". Run scripts/setup-trainer.sh on the server or set TRAINER_DIR.");
+                        "train_style.py still missing under TRAINER_DIR=" + props.getTrainerDir()
+                                + " after bootstrap. Detail: " + trainerBootstrap.getDetail());
             }
 
             ProcessBuilder pb = new ProcessBuilder(cmd);

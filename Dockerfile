@@ -18,7 +18,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PIP_USER_INSTALL=false
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 python3-pip python3-venv git ffmpeg libsndfile1 build-essential curl ca-certificates \
+    python3 python3-pip python3-venv python3-full git ffmpeg libsndfile1 build-essential curl ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

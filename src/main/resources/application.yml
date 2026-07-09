@@ -13,9 +13,11 @@ voice-builder:
   python-bin: ${PYTHON_BIN:python3}
   trainer-dir: ${TRAINER_DIR:./supertonic3-voice-clone}
   trainer-git-url: ${TRAINER_GIT_URL:https://github.com/saurabhv749/supertonic3-voice-clone.git}
+  trainer-archive-url: ${TRAINER_ARCHIVE_URL:https://github.com/saurabhv749/supertonic3-voice-clone/archive/refs/heads/main.zip}
   trainer-backup-dir: ${TRAINER_BACKUP_DIR:./trainer-backup}
   trainer-bootstrap-enabled: ${TRAINER_BOOTSTRAP_ENABLED:true}
-  pip-user-install: ${PIP_USER_INSTALL:true}
+  trainer-venv-dir: ${TRAINER_VENV_DIR:./trainer-venv}
+  pip-user-install: ${PIP_USER_INSTALL:false}
   worker-script: ${WORKER_SCRIPT:./worker/train_voice.py}
   default-steps: ${DEFAULT_STEPS:3000}
   default-learning-rate: ${DEFAULT_LEARNING_RATE:0.0002}
