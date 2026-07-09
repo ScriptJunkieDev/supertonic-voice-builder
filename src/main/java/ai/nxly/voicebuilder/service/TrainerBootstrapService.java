@@ -12,6 +12,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
@@ -233,16 +234,51 @@ public class TrainerBootstrapService {
         log.info("Training will use Python from venv: {}", venvPython);
     }
 
-    private Path resolvePipRequirementsFile(Path trainerDir) {
+    private Path resolvePipRequirementsFile(Path trainerDir) throws IOException {
+        List<Path> candidates = new ArrayList<>();
         String configured = props.getTrainerRequirementsPath();
         if (configured != null && !configured.isBlank()) {
-            Path candidate = Path.of(configured);
+            candidates.add(Path.of(configured.trim()));
+        }
+        Path workerFile = VoiceBuilderPaths.appRoot().resolve("worker/trainer-pip-requirements.txt");
+        candidates.add(workerFile);
+
+        for (Path candidate : candidates) {
             if (Files.isRegularFile(candidate)) {
+                log.info("Using pip requirements file {}", candidate.toAbsolutePath());
                 return candidate.normalize();
             }
         }
-        Path upstream = trainerDir.resolve("requirements.txt");
-        return Files.isRegularFile(upstream) ? upstream : Path.of(configured != null ? configured : upstream.toString());
+
+        Path fromJar = materializeBundledRequirementsFile();
+        if (Files.isRegularFile(fromJar)) {
+            log.info("Using bundled pip requirements file {}", fromJar.toAbsolutePath());
+            return fromJar;
+        }
+
+        if (props.isTrainerUseUpstreamRequirements()) {
+            Path upstream = trainerDir.resolve("requirements.txt");
+            if (Files.isRegularFile(upstream)) {
+                log.warn("Using upstream trainer requirements.txt from {} (TRAINER_USE_UPSTREAM_REQUIREMENTS=true)", upstream);
+                return upstream;
+            }
+        }
+
+        throw new IOException(
+                "No pip requirements file found. Deploy worker/trainer-pip-requirements.txt or redeploy a current app.jar "
+                        + "(bundled copy is extracted under data/bootstrap/). Upstream requirements.txt is not used by default.");
+    }
+
+    private Path materializeBundledRequirementsFile() throws IOException {
+        try (InputStream in = getClass().getResourceAsStream("/trainer/trainer-pip-requirements.txt")) {
+            if (in == null) {
+                return null;
+            }
+            Path out = Path.of(props.getDataDir(), "bootstrap", "trainer-pip-requirements.txt");
+            Files.createDirectories(out.getParent());
+            Files.copy(in, out, StandardCopyOption.REPLACE_EXISTING);
+            return out;
+        }
     }
 
     private static Path resolveVenvPython(Path venvDir) {

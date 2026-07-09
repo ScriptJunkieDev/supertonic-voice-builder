@@ -19,6 +19,7 @@ public class VoiceBuilderProperties {
     private String trainerArchiveUrl;
     private String trainerBackupDir;
     private String trainerRequirementsPath;
+    private boolean trainerUseUpstreamRequirements;
     private boolean trainerBootstrapEnabled = true;
     private boolean pipUserInstall = true;
     private String trainerVenvDir;
@@ -44,6 +45,10 @@ public class VoiceBuilderProperties {
     public void setTrainerBackupDir(String trainerBackupDir) { this.trainerBackupDir = trainerBackupDir; }
     public String getTrainerRequirementsPath() { return trainerRequirementsPath; }
     public void setTrainerRequirementsPath(String trainerRequirementsPath) { this.trainerRequirementsPath = trainerRequirementsPath; }
+    public boolean isTrainerUseUpstreamRequirements() { return trainerUseUpstreamRequirements; }
+    public void setTrainerUseUpstreamRequirements(boolean trainerUseUpstreamRequirements) {
+        this.trainerUseUpstreamRequirements = trainerUseUpstreamRequirements;
+    }
     public boolean isTrainerBootstrapEnabled() { return trainerBootstrapEnabled; }
     public void setTrainerBootstrapEnabled(boolean trainerBootstrapEnabled) { this.trainerBootstrapEnabled = trainerBootstrapEnabled; }
     public boolean isPipUserInstall() { return pipUserInstall; }

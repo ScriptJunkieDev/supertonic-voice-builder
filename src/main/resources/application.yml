@@ -16,6 +16,7 @@ voice-builder:
   trainer-archive-url: ${TRAINER_ARCHIVE_URL:https://github.com/saurabhv749/supertonic3-voice-clone/archive/refs/heads/main.zip}
   trainer-backup-dir: ${TRAINER_BACKUP_DIR:./trainer-backup}
   trainer-requirements-path: ${TRAINER_REQUIREMENTS_PATH:./worker/trainer-pip-requirements.txt}
+  trainer-use-upstream-requirements: ${TRAINER_USE_UPSTREAM_REQUIREMENTS:false}
   trainer-bootstrap-enabled: ${TRAINER_BOOTSTRAP_ENABLED:true}
   trainer-venv-dir: ${TRAINER_VENV_DIR:./trainer-venv}
   pip-user-install: ${PIP_USER_INSTALL:false}
