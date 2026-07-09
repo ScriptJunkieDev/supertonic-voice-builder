@@ -17,6 +17,8 @@ RUN apt-get update \
         build-essential \
         curl \
         ca-certificates \
+    && rm -rf /var/lib/apt/lists/* \
+    && (apt-get update && apt-get install -y --no-install-recommends python3.12 python3.12-venv || true) \
     && rm -rf /var/lib/apt/lists/*
 
 ENV PYTHON_BIN=python3

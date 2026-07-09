@@ -41,8 +41,14 @@ def main():
 
     before = set(str(p) for p in trainer_dir.rglob("*.json"))
 
+    runner = Path(__file__).resolve().parent / "torchaudio_soundfile_runner.py"
+    if not runner.exists():
+        print(f"ERROR: runner not found at {runner}", flush=True)
+        sys.exit(2)
+
     cmd = [
         sys.executable,
+        str(runner),
         str(train_script),
         "--name", args.name,
         "--target-wav-path", args.target_wav_path,

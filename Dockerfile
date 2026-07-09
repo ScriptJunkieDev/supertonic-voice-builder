@@ -31,6 +31,6 @@ RUN python3 -m venv venv \
 COPY --from=build /build/target/supertonic-voice-builder-0.1.0.jar /app/app.jar
 COPY worker /app/worker
 COPY trainer-backup /app/trainer-backup
-RUN chmod +x /app/worker/train_voice.py && mkdir -p /data /voices
+RUN chmod +x /app/worker/train_voice.py /app/worker/torchaudio_soundfile_runner.py && mkdir -p /data /voices
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]
