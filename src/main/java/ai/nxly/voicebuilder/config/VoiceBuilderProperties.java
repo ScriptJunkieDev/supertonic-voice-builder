@@ -18,6 +18,7 @@ public class VoiceBuilderProperties {
     private String trainerGitUrl;
     private String trainerArchiveUrl;
     private String trainerBackupDir;
+    private String trainerRequirementsPath;
     private boolean trainerBootstrapEnabled = true;
     private boolean pipUserInstall = true;
     private String trainerVenvDir;
@@ -41,6 +42,8 @@ public class VoiceBuilderProperties {
     public void setTrainerArchiveUrl(String trainerArchiveUrl) { this.trainerArchiveUrl = trainerArchiveUrl; }
     public String getTrainerBackupDir() { return trainerBackupDir; }
     public void setTrainerBackupDir(String trainerBackupDir) { this.trainerBackupDir = trainerBackupDir; }
+    public String getTrainerRequirementsPath() { return trainerRequirementsPath; }
+    public void setTrainerRequirementsPath(String trainerRequirementsPath) { this.trainerRequirementsPath = trainerRequirementsPath; }
     public boolean isTrainerBootstrapEnabled() { return trainerBootstrapEnabled; }
     public void setTrainerBootstrapEnabled(boolean trainerBootstrapEnabled) { this.trainerBootstrapEnabled = trainerBootstrapEnabled; }
     public boolean isPipUserInstall() { return pipUserInstall; }
@@ -62,6 +65,7 @@ public class VoiceBuilderProperties {
         workerScript = VoiceBuilderPaths.resolveDirectory(root, workerScript);
         trainerDir = VoiceBuilderPaths.resolveDirectory(root, trainerDir);
         trainerBackupDir = VoiceBuilderPaths.resolveDirectory(root, trainerBackupDir);
+        trainerRequirementsPath = VoiceBuilderPaths.resolveDirectory(root, trainerRequirementsPath);
         trainerVenvDir = VoiceBuilderPaths.resolveDirectory(root, trainerVenvDir);
         pythonBin = VoiceBuilderPaths.resolvePythonBin(pythonBin);
     }

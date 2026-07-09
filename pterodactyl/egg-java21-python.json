@@ -62,7 +62,7 @@
             "name": "Python binary",
             "description": "Python executable on PATH for apps that shell out to Python.",
             "env_variable": "PYTHON_BIN",
-            "default_value": "python3",
+            "default_value": "python3.12",
             "user_viewable": true,
             "user_editable": true,
             "rules": "required|string",

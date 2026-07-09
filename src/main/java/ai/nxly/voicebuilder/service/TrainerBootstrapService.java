@@ -201,14 +201,15 @@ public class TrainerBootstrapService {
     }
 
     private void installPythonRequirements(Path trainerDir) throws IOException, InterruptedException {
-        Path requirements = trainerDir.resolve("requirements.txt");
+        Path requirements = resolvePipRequirementsFile(trainerDir);
         if (!Files.isRegularFile(requirements) || !props.isPythonAvailable()) {
+            log.warn("Skipping pip install; requirements file missing or Python unavailable ({})", requirements);
             return;
         }
         Path venvDir = Path.of(props.getTrainerVenvDir());
         Path venvPython = resolveVenvPython(venvDir);
         if (!Files.isExecutable(venvPython)) {
-            log.info("Creating trainer venv at {}", venvDir);
+            log.info("Creating trainer venv at {} with {}", venvDir, props.getPythonBin());
             Files.createDirectories(venvDir.getParent() != null ? venvDir.getParent() : venvDir);
             runProcess(List.of(props.getPythonBin(), "-m", "venv", venvDir.toString()), VoiceBuilderPaths.appRoot());
             venvPython = resolveVenvPython(venvDir);
@@ -220,6 +221,7 @@ public class TrainerBootstrapService {
         if (!Files.isExecutable(venvPip)) {
             venvPip = venvDir.resolve(isWindows() ? "Scripts/pip" : "bin/pip3");
         }
+        runProcess(List.of(venvPip.toString(), "install", "--upgrade", "pip", "setuptools", "wheel"), trainerDir);
         List<String> cmd = new ArrayList<>();
         cmd.add(venvPip.toString());
         cmd.add("install");
@@ -229,6 +231,18 @@ public class TrainerBootstrapService {
         runProcess(cmd, trainerDir);
         props.setPythonBin(venvPython.toString());
         log.info("Training will use Python from venv: {}", venvPython);
+    }
+
+    private Path resolvePipRequirementsFile(Path trainerDir) {
+        String configured = props.getTrainerRequirementsPath();
+        if (configured != null && !configured.isBlank()) {
+            Path candidate = Path.of(configured);
+            if (Files.isRegularFile(candidate)) {
+                return candidate.normalize();
+            }
+        }
+        Path upstream = trainerDir.resolve("requirements.txt");
+        return Files.isRegularFile(upstream) ? upstream : Path.of(configured != null ? configured : upstream.toString());
     }
 
     private static Path resolveVenvPython(Path venvDir) {
