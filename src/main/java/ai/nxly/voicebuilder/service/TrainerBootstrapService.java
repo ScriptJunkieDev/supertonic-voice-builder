@@ -1,5 +1,6 @@
 package ai.nxly.voicebuilder.service;
 
+import ai.nxly.voicebuilder.config.DiskDiagnostics;
 import ai.nxly.voicebuilder.config.VoiceBuilderPaths;
 import ai.nxly.voicebuilder.config.VoiceBuilderProperties;
 import org.slf4j.Logger;
@@ -230,7 +231,8 @@ public class TrainerBootstrapService {
         cmd.add("-r");
         cmd.add(requirements.toString());
         log.info("Installing trainer Python requirements into venv {} from {}", venvDir, requirements);
-        assertDiskSpaceForTrainerInstall(venvDir);
+        logFilesystemDiagnostics(venvDir);
+        warnIfLowDisk(venvDir);
         runProcess(cmd, trainerDir, true);
         props.setPythonBin(venvPython.toString());
         log.info("Training will use Python from venv: {}", venvPython);
@@ -296,19 +298,37 @@ public class TrainerBootstrapService {
         return System.getProperty("os.name", "").toLowerCase().contains("win");
     }
 
-    private void assertDiskSpaceForTrainerInstall(Path venvDir) throws IOException {
-        long containerFree = VoiceBuilderPaths.usableBytes(VoiceBuilderPaths.appRoot());
-        long dataFree = VoiceBuilderPaths.usableBytes(Path.of(props.getDataDir()));
-        long min = props.getTrainerInstallMinFreeBytes();
-        log.info("Disk free (container root): {} MiB; data dir: {} MiB; need ~{} MiB for PyTorch CPU deps",
-                containerFree / 1024 / 1024, dataFree / 1024 / 1024, min / 1024 / 1024);
-        long effective = Math.min(containerFree, dataFree > 0 ? dataFree : containerFree);
-        if (effective < min) {
-            throw new IOException(
-                    "Not enough disk space on this Pterodactyl server volume (~" + effective / 1024 / 1024
-                            + " MiB free). Node-wide disk can look fine in the panel while this instance still has a quota. "
-                            + "Raise the server's Disk Space limit (often 3–5 GiB+ for torch), then rm -rf trainer-venv data/tmp data/pip-cache and restart.");
+    private void logFilesystemDiagnostics(Path venvDir) {
+        String summary = DiskDiagnostics.summarize(
+                VoiceBuilderPaths.appRoot(),
+                Path.of(props.getDataDir()),
+                venvDir,
+                Path.of("/tmp"));
+        lastDiskDiagnostics = summary;
+        log.info("Filesystem diagnostics before pip install:\n{}", summary);
+    }
+
+    private void warnIfLowDisk(Path venvDir) {
+        try {
+            long containerFree = VoiceBuilderPaths.usableBytes(VoiceBuilderPaths.appRoot());
+            long dataFree = VoiceBuilderPaths.usableBytes(Path.of(props.getDataDir()));
+            long min = props.getTrainerInstallMinFreeBytes();
+            long effective = Math.min(containerFree, dataFree > 0 ? dataFree : containerFree);
+            if (effective < min) {
+                log.warn(
+                        "Low free space reported for install path (~{} MiB; suggested ~{} MiB for PyTorch CPU). "
+                                + "If pip fails with errno 28, check df output above (tmp mount, inodes, or stale partial downloads).",
+                        effective / 1024 / 1024, min / 1024 / 1024);
+            }
+        } catch (IOException e) {
+            log.warn("Could not read free disk space: {}", e.getMessage());
         }
+    }
+
+    private volatile String lastDiskDiagnostics = "";
+
+    public String getLastDiskDiagnostics() {
+        return lastDiskDiagnostics;
     }
 
     private Path pipTempRoot() throws IOException {
@@ -341,9 +361,11 @@ public class TrainerBootstrapService {
             String message = "Command failed (" + code + "): " + String.join(" ", cmd)
                     + System.lineSeparator() + out;
             if (out.toString().contains("No space left on device")) {
+                logFilesystemDiagnostics(Path.of(props.getTrainerVenvDir()));
                 message += System.lineSeparator()
-                        + "Hint: this is usually the Pterodactyl server disk quota on /home/container, not total node storage. "
-                        + "Increase server Disk Space, delete trainer-venv and data/tmp, then restart.";
+                        + "errno 28: a filesystem refused the write (not always the panel disk slider). "
+                        + "See startup log/health diskDiagnostics for df -h and df -i (common: small /tmp tmpfs, inode exhaustion, or leftover pip partials). "
+                        + "Try: rm -rf data/trainer-venv data/tmp trainer-venv && restart with current app.jar (pip uses data/tmp for TMPDIR).";
             }
             throw new IOException(message);
         }
