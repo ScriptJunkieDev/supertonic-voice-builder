@@ -1,7 +1,7 @@
-# towncraft-ptero-arm - generic Java 21 + Python runtime for Pterodactyl (amd64 + arm64).
+# ghcr.io/<owner>/app:java21-python — Java 21 + Python for Pterodactyl (amd64 + arm64).
 # No app-specific ENV, JAR, or pip installs.
 
-FROM ghcr.io/pterodactyl/yolks:java_21 AS base
+FROM ghcr.io/pterodactyl/yolks:java_21
 
 USER root
 
@@ -14,14 +14,10 @@ RUN apt-get update \
         curl \
         ca-certificates \
         build-essential \
+        ffmpeg \
+        libsndfile1 \
+        unzip \
     && rm -rf /var/lib/apt/lists/*
-
-FROM base AS runtime
 
 USER container
 WORKDIR /home/container
-
-FROM runtime AS install
-
-USER root
-WORKDIR /mnt/server

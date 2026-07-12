@@ -1,28 +1,23 @@
-# towncraft-ptero-arm
+# Java 21 + Python (`app`)
 
 Generic **Java 21 + Python** Docker image for Pterodactyl, built for `linux/amd64` and `linux/arm64`.
 
 This root project is the platform image only. It should not contain app-specific `ENV`, JARs, Python requirements, or install logic. App-specific Supertonic files are staged in [`supertonic-app/`](supertonic-app/) so that folder can be moved into its own repository later.
 
-## Images
+## Image
 
 | Tag | Use |
 |-----|-----|
-| `ghcr.io/scriptjunkiedev/towncraft-ptero-arm:java_21_python` | Server runtime (`USER container`) |
-| `ghcr.io/scriptjunkiedev/towncraft-ptero-arm:java_21_python_install` | Egg Reinstall only (`root`) |
+| `ghcr.io/scriptjunkiedev/app:java21-python` | Server runtime and egg Reinstall (same as official Ptero eggs) |
 
-Both tags are built from the single root [`Dockerfile`](Dockerfile):
-
-- `runtime` target: normal Pterodactyl server container
-- `install` target: root install container for Wings Reinstall
+Built from the root [`Dockerfile`](Dockerfile).
 
 ## Build / Publish
 
-[`.github/workflows/docker.yml`](.github/workflows/docker.yml) publishes both tags to GHCR on push to `main` / tags.
+[`.github/workflows/docker.yml`](.github/workflows/docker.yml) publishes to GHCR on push to `main` / tags.
 
 ```bash
-docker pull ghcr.io/scriptjunkiedev/towncraft-ptero-arm:java_21_python
-docker pull ghcr.io/scriptjunkiedev/towncraft-ptero-arm:java_21_python_install
+docker pull ghcr.io/scriptjunkiedev/app:java21-python
 ```
 
 ## What Belongs Here

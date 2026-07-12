@@ -8,7 +8,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 EGG = ROOT / "eggs" / "supertonic" / "egg-supertonic-voice-builder.json"
 SCRIPT = ROOT / "eggs" / "supertonic" / "egg-install.sh"
-IMG = "ghcr.io/scriptjunkiedev/towncraft-ptero-arm"
+IMG = "ghcr.io/scriptjunkiedev/app"
+TAG = "java21-python"
 
 
 def main() -> None:
@@ -17,8 +18,9 @@ def main() -> None:
     if not script.endswith("\n"):
         script += "\n"
     egg["scripts"]["installation"]["script"] = script
-    egg["scripts"]["installation"]["container"] = f"{IMG}:java_21_python_install"
-    egg["docker_images"] = {f"{IMG}:java_21_python": f"{IMG}:java_21_python"}
+    ref = f"{IMG}:{TAG}"
+    egg["scripts"]["installation"]["container"] = ref
+    egg["docker_images"] = {ref: ref}
     egg["description"] = (
         "Dedicated to ScriptJunkieDev/supertonic-voice-builder. "
         "Reinstall fetches supertonic-server-bundle.zip (worker/) and creates ./venv. "

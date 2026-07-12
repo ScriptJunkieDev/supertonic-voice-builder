@@ -5,8 +5,7 @@ This folder contains the Supertonic-specific app, build files, worker bundle, an
 It depends on the generic Pterodactyl image from the platform repo:
 
 ```text
-ghcr.io/scriptjunkiedev/towncraft-ptero-arm:java_21_python
-ghcr.io/scriptjunkiedev/towncraft-ptero-arm:java_21_python_install
+ghcr.io/scriptjunkiedev/app:java21-python
 ```
 
 ## Contents

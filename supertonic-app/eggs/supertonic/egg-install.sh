@@ -1,13 +1,9 @@
 #!/usr/bin/env bash
-# Supertonic Voice Builder — egg Reinstall (install image, root). /mnt/server = /home/container.
+# Supertonic Voice Builder — egg Reinstall. /mnt/server = server files (same as /home/container at runtime).
 set -euo pipefail
 cd /mnt/server
 
-export DEBIAN_FRONTEND=noninteractive
-apt-get update -qq
-apt-get install -y --no-install-recommends ffmpeg libsndfile1 unzip || true
-
-echo "[egg] Python on install image: $(python3 --version 2>&1)"
+echo "[egg] Python: $(python3 --version 2>&1)"
 python3 -c 'import sys; (sys.version_info.major, sys.version_info.minor) >= (3, 10) or sys.exit("Need Python 3.10+ for torch 2.9")'
 
 mkdir -p data data/tmp voices

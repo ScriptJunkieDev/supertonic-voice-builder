@@ -9,11 +9,11 @@ on:
 env:
   REGISTRY: ghcr.io
   PLATFORMS: linux/amd64,linux/arm64
-  IMAGE_NAME: towncraft-ptero-arm
+  IMAGE_NAME: app
 
 jobs:
-  towncraft-ptero-arm:
-    name: towncraft-ptero-arm (runtime + install)
+  app-java21-python:
+    name: app:java21-python
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -39,43 +39,22 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata (runtime)
-        id: meta_runtime
+      - name: Extract metadata
+        id: meta
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/${{ env.GHCR_OWNER }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=raw,value=java_21_python,enable={{is_default_branch}}
+            type=raw,value=java21-python,enable={{is_default_branch}}
             type=sha,prefix=
             type=ref,event=tag
 
-      - name: Build and push runtime
+      - name: Build and push
         uses: docker/build-push-action@v6
         with:
           context: .
           file: Dockerfile
-          target: runtime
           platforms: ${{ env.PLATFORMS }}
           push: true
-          tags: ${{ steps.meta_runtime.outputs.tags }}
-          labels: ${{ steps.meta_runtime.outputs.labels }}
-
-      - name: Extract metadata (install)
-        id: meta_install
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/${{ env.GHCR_OWNER }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=raw,value=java_21_python_install,enable={{is_default_branch}}
-            type=sha,prefix=install-
-
-      - name: Build and push install
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: Dockerfile
-          target: install
-          platforms: ${{ env.PLATFORMS }}
-          push: true
-          tags: ${{ steps.meta_install.outputs.tags }}
-          labels: ${{ steps.meta_install.outputs.labels }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
