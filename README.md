@@ -18,7 +18,7 @@ This project wraps that flow in Spring Boot and a small Python worker.
 
 ## Trainer bootstrap (app-owned)
 
-Docker images and the Pterodactyl egg are **generic Java + Python runtimes**. They do **not** clone the upstream trainer at image build time.
+Docker **appliance** and **Pterodactyl** images are built for this repo only. They do **not** clone the upstream trainer at image build time.
 
 On startup, `TrainerBootstrapService` fetches **trainer source files** and **Supertonic ONNX weights** (no app `pip`):
 
@@ -71,8 +71,9 @@ See `.env.example`. Important variables:
 
 | Image | Use |
 |-------|-----|
-| `ghcr.io/scriptjunkiedev/supertonic-voice-builder:latest` | This app: JAR + worker + empty `trainer-backup/` slot |
-| `ghcr.io/scriptjunkiedev/java21-python-yolk:java_21_python` | **Generic** Ptero runtime (any Spring Boot + Python app) |
+| `ghcr.io/scriptjunkiedev/supertonic-voice-builder:latest` | Docker appliance (JAR + worker + `trainer-backup/` slot) |
+| `ghcr.io/scriptjunkiedev/supertonic-voice-builder-ptero:runtime` | **Pterodactyl server runtime** (Supertonic egg only) |
+| `ghcr.io/scriptjunkiedev/supertonic-voice-builder-ptero:install` | Pterodactyl egg install job only (root) |
 
 Make GHCR packages **public** if the panel cannot pull private images.
 
@@ -98,7 +99,7 @@ Populate `trainer-backup/` on the host before build if you want an offline snaps
 
 ### Pterodactyl
 
-Generic egg: [`pterodactyl/egg-java21-python.json`](pterodactyl/egg-java21-python.json) + [`pterodactyl/README.md`](pterodactyl/README.md).
+Dedicated egg (not for other apps): [`pterodactyl/egg-supertonic-voice-builder.json`](pterodactyl/egg-supertonic-voice-builder.json) + [`pterodactyl/README.md`](pterodactyl/README.md).
 
 Upload `app.jar`, `worker/`, and optionally `trainer-backup/` via local deploy (`send.jar`, gitignored bat/ps1).
 
@@ -112,7 +113,7 @@ Gitignored: `*.jar`, `*.zip`, `*.bat`, `*.ps1`, `trainer-backup/**` (except `tra
 src/main/java/          API, TrainerBootstrapService, embedded UI
 worker/                 train_voice.py
 trainer-backup/         Optional vendor snapshot (contents not in git)
-pterodactyl/            Generic egg + yolk Dockerfile
+pterodactyl/            Supertonic-only Ptero egg + runtime Dockerfiles
 Dockerfile              App image (no upstream git clone at build)
 ```
 

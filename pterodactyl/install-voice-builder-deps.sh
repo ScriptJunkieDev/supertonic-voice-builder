@@ -51,7 +51,7 @@ echo "[egg] Installing PyTorch CPU + trainer deps (several minutes) ..."
 "$PIP" uninstall -y torchcodec 2>/dev/null || true
 
 cat > README.txt <<'EOF'
-Supertonic Voice Builder (Java 21 + Python egg)
+Supertonic Voice Builder (Pterodactyl egg — not for other apps)
 
 Install created:
   venv/     — PyTorch CPU + trainer deps (egg install)

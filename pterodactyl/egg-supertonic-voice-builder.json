@@ -1,0 +1,83 @@
+{
+    "_comment": "Supertonic Voice Builder only \u2014 not a generic Java/Python Pterodactyl egg.",
+    "meta": {
+        "version": "PTDL_v2",
+        "update_url": null
+    },
+    "exported_at": "2026-07-11T20:00:00-04:00",
+    "name": "Supertonic Voice Builder",
+    "author": "scriptjunkie@towncraft.us",
+    "description": "Dedicated to ScriptJunkieDev/supertonic-voice-builder. Egg install creates ./venv (PyTorch CPU). Upload app.jar + worker/. Not for other Spring or Python apps.",
+    "features": null,
+    "docker_images": {
+        "ghcr.io/scriptjunkiedev/supertonic-voice-builder-ptero:runtime": "ghcr.io/scriptjunkiedev/supertonic-voice-builder-ptero:runtime"
+    },
+    "file_denylist": [],
+    "startup": "java -Xms128M -Xmx{{JVM_HEAP_MB}}M {{JAVA_FLAGS}} -jar {{JAR_FILE}} --server.port={{SERVER_PORT}} {{APP_ARGS}}",
+    "config": {
+        "files": "{}",
+        "startup": "{\r\n    \"done\": \"Started \"\r\n}",
+        "logs": "{}",
+        "stop": "^C"
+    },
+    "scripts": {
+        "installation": {
+            "script": "#!/bin/bash\n# Supertonic Voice Builder \u2014 Pterodactyl egg install (supertonic-voice-builder-ptero:install, root).\nset -euo pipefail\ncd /mnt/server\n\nexport DEBIAN_FRONTEND=noninteractive\n\npick_python() {\n  for ver in 12 11 10; do\n    if command -v \"python3.${ver}\" >/dev/null 2>&1 \\\n      && \"python3.${ver}\" -c 'import sys; exit(0 if (3,10) <= sys.version_info[:2] < (3,13) else 1)'; then\n      echo \"python3.${ver}\"\n      return 0\n    fi\n  done\n  apt-get update -qq\n  for ver in 12 11 10; do\n    if apt-get install -y --no-install-recommends \"python3.${ver}\" \"python3.${ver}-venv\" 2>/dev/null \\\n      && \"python3.${ver}\" -c 'import sys; exit(0 if (3,10) <= sys.version_info[:2] < (3,13) else 1)'; then\n      echo \"python3.${ver}\"\n      return 0\n    fi\n  done\n  if python3 -c 'import sys; exit(0 if (3,10) <= sys.version_info[:2] < (3,13) else 1)'; then\n    echo python3\n    return 0\n  fi\n  echo \"[egg] ERROR: need Python 3.10\u20133.12 (avoid 3.13+ for PyTorch/torchcodec stability)\" >&2\n  return 1\n}\n\nPY=\"$(pick_python)\"\necho \"[egg] Using ${PY} ($(${PY} --version 2>&1))\"\n\nmkdir -p data data/tmp voices\nexport TMPDIR=\"/mnt/server/data/tmp\"\nexport PIP_NO_CACHE_DIR=1\n\nREQ_URL=\"${TRAINER_PIP_REQUIREMENTS_URL:-https://raw.githubusercontent.com/ScriptJunkieDev/supertonic-voice-builder/main/worker/trainer-pip-requirements.txt}\"\n\necho \"[egg] Creating ./venv ...\"\n\"${PY}\" -m venv venv\nPIP=\"venv/bin/pip\"\n\"$PIP\" install --no-cache-dir --upgrade pip setuptools wheel\n\necho \"[egg] Fetching $REQ_URL\"\ncurl -fsSL -o trainer-pip-requirements.txt \"$REQ_URL\"\n\necho \"[egg] Installing PyTorch CPU + trainer deps (several minutes) ...\"\n\"$PIP\" install --no-cache-dir -r trainer-pip-requirements.txt\n\"$PIP\" uninstall -y torchcodec 2>/dev/null || true\n\ncat > README.txt <<'EOF'\nSupertonic Voice Builder (Pterodactyl egg \u2014 not for other apps)\n\nInstall created:\n  venv/     \u2014 PyTorch CPU + trainer deps (egg install)\n  data/     \u2014 app uploads and jobs\n  voices/   \u2014 trained voice JSON output\n\nDeploy: app.jar + worker/\n\nPanel: PYTHON_BIN=./venv/bin/python3  JAR_FILE=app.jar\n\nJava app clones supertonic3-voice-clone at startup only (no pip).\nEOF\n\necho \"[egg] Done. venv python: $(venv/bin/python3 --version 2>&1)\"\n",
+            "container": "ghcr.io/scriptjunkiedev/supertonic-voice-builder-ptero:install",
+            "entrypoint": "/bin/bash"
+        }
+    },
+    "variables": [
+        {
+            "name": "JAR file name",
+            "description": "The Spring Boot fat JAR to run (in /home/container).",
+            "env_variable": "JAR_FILE",
+            "default_value": "app.jar",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string",
+            "field_type": "text"
+        },
+        {
+            "name": "JVM heap (MB)",
+            "description": "Java -Xmx cap. Leave most of SERVER_MEMORY for Python/PyTorch training (do not set equal to server RAM).",
+            "env_variable": "JVM_HEAP_MB",
+            "default_value": "1024",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|integer|min:256|max:8192",
+            "field_type": "text"
+        },
+        {
+            "name": "Java flags",
+            "description": "Extra JVM flags (e.g., --add-opens, GC, debug).",
+            "env_variable": "JAVA_FLAGS",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
+            "field_type": "text"
+        },
+        {
+            "name": "App args",
+            "description": "Extra application args (e.g., --spring.profiles.active=prod).",
+            "env_variable": "APP_ARGS",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
+            "field_type": "text"
+        },
+        {
+            "name": "Python binary",
+            "description": "Python for training (egg install creates ./venv).",
+            "env_variable": "PYTHON_BIN",
+            "default_value": "./venv/bin/python3",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string",
+            "field_type": "text"
+        }
+    ],
+    "icon": null
+}

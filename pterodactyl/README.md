@@ -1,52 +1,41 @@
-# Pterodactyl: Java 21 + Python (generic egg)
+# Pterodactyl: Supertonic Voice Builder (dedicated egg)
 
-Generic runtime for Spring Boot apps that need **Java 21** and **Python 3**. The egg installs **PyTorch CPU + trainer pip deps** into `./venv`. The Java app does **not** run `pip`; it only clones `supertonic3-voice-clone` sources at startup.
+**Not a generic Java/Python egg.** Use only with [supertonic-voice-builder](https://github.com/ScriptJunkieDev/supertonic-voice-builder) (`app.jar` + `worker/`).
 
-## 1. Runtime image (yolk)
+## 1. Runtime image (Ptero)
 
-**CI:** push to `main` builds:
+**CI** (push to `main`) publishes:
 
 ```text
-ghcr.io/scriptjunkiedev/java21-python-yolk:java_21_python
+ghcr.io/scriptjunkiedev/supertonic-voice-builder-ptero:runtime
 ```
 
-Built from `pterodactyl/Dockerfile.yolk` (Java yolk + `python3`, `pip`, `git`, ffmpeg, libsndfile). Make the GHCR package **public** if the panel has no registry auth.
+Egg **install** uses sibling tag **`install`** (root user) so Wings can run `/mnt/install/install.sh`.
 
-Egg **installation** uses a sibling image `java21-python-yolk:java_21_python_install` (same Python, **root** user) so Wings can run `/mnt/install/install.sh`. The runtime server still uses `java_21_python` (`USER container`).
+Built from `pterodactyl/Dockerfile.yolk` and `Dockerfile.yolk-install`. Multi-arch: `linux/amd64`, `linux/arm64`. Make GHCR **public** if the panel has no registry auth.
 
 ## 2. Import the egg
 
-1. Admin → **Nests** → import `pterodactyl/egg-java21-python.json`.
+1. Admin → **Nests** → import `pterodactyl/egg-supertonic-voice-builder.json`.
 2. Create or **reinstall** a server using this egg.
 
-**Important:** Updating the egg JSON in the panel does **not** re-run install on existing servers. Use **Reinstall Server** (wipes `/home/container` except what install recreates) so the installation script runs and builds `venv/`.
+**Important:** Updating the egg JSON does **not** re-run install on existing servers. Use **Reinstall Server** to rebuild `./venv`.
 
-The install script is **inlined in the egg**. It runs in **`java21-python-yolk:java_21_python_install`** (root; same Python 3.10+ as the game container). Do **not** point installation at the runtime yolk tag — that image runs as `container` and Wings will fail with `install.sh: Permission denied`.
+Install creates `venv/` (PyTorch CPU), `data/`, `voices/` under `/home/container`.
 
-Install creates:
-
-- `venv/` — PyTorch CPU stack (`worker/trainer-pip-requirements.txt`)
-- `data/`, `data/tmp`, `voices/`
-
-Everything stays under `/home/container` (install uses `TMPDIR=/mnt/server/data/tmp`).
-
-## 3. Deploy Supertonic Voice Builder
+## 3. Deploy the app
 
 Upload to `/home/container`:
 
 - `app.jar`
-- `worker/` (optional `trainer-backup/` if you vendor a trainer snapshot for offline use)
+- `worker/` (optional `trainer-backup/` for offline trainer snapshot)
 
 Panel defaults:
 
 - `PYTHON_BIN=./venv/bin/python3`
 - `JAR_FILE=app.jar`
-- **`JVM_HEAP_MB=1024`** — Java heap cap; **do not** set `-Xmx` to the full server memory or PyTorch training will be OOM-killed (exit **-9**).
-- Assign **6–8 GB+** container memory for training (upstream cites ~2.6 GB peak for the trainer plus JVM, ONNX, and OS overhead).
-
-See root `.env.example` for trainer clone URLs and paths.
-
-If you previously used `data/trainer-venv` from an older app-side pip flow, remove it after switching to this egg.
+- **`JVM_HEAP_MB=1024`** — do not give Java the full server RAM (PyTorch training needs the rest).
+- Assign **6–8 GB+** container memory for CPU training.
 
 ## 4. Verify
 
@@ -54,12 +43,10 @@ If you previously used `data/trainer-venv` from an older app-side pip flow, remo
 GET /api/health
 ```
 
-Check `trainerBootstrap`, `trainerPresent`, `pythonAvailable`, `diskFreeContainerMiB`.
-
-## Appliance image (this app only)
+## Docker appliance (non-Ptero)
 
 ```text
 ghcr.io/scriptjunkiedev/supertonic-voice-builder:latest
 ```
 
-Java + Python **runtime** with `/app/venv` baked at image build; trainer sources are fetched or restored from `trainer-backup/` at startup, not cloned in the Docker build from upstream git.
+Separate image from the Ptero egg runtime — use for Docker Compose / VPS, not for unrelated apps.
