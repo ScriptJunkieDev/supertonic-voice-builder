@@ -1,9 +1,11 @@
 # Build outputs
 target/
+supertonic-app/target/
 
 # Deploy / local artifacts (do not commit)
 *.jar
 *.zip
+!supertonic-app/eggs/supertonic/supertonic-server-bundle.zip
 *.bat
 *.ps1
 
@@ -14,15 +16,20 @@ send.jar
 data/
 voices/
 supertonic3-voice-clone/
+supertonic-app/data/
+supertonic-app/voices/
+supertonic-app/supertonic3-voice-clone/
 
 venv/
+supertonic-app/venv/
 
-# Optional local trainer snapshot (see trainer-backup/README.md)
-trainer-backup/**
-!trainer-backup/README.md
+# Optional local trainer snapshot (see supertonic-app/trainer-backup/README.md)
+supertonic-app/trainer-backup/**
+!supertonic-app/trainer-backup/README.md
 
 # Environment / secrets
 .env
+supertonic-app/.env
 
 # IDE / editor (local only — do not commit)
 .cursor/

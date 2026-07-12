@@ -6,7 +6,7 @@
     <artifactId>supertonic-voice-builder</artifactId>
     <version>0.1.0</version>
     <name>Supertonic Voice Builder</name>
-    <description>Spring Boot appliance for CPU-only Supertonic custom voice-style training</description>
+    <description>Supertonic Voice Builder — Spring Boot UI for CPU-only custom voice JSON training</description>
 
     <parent>
         <groupId>org.springframework.boot</groupId>

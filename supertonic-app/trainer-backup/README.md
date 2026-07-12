@@ -11,9 +11,9 @@ If the upstream Git repository is unreachable at startup, the app copies this fo
    trainer-backup/train_style.py
    ```
 
-3. Include `requirements.txt` if pip should install trainer dependencies on startup.
+3. Optionally mirror trainer files you need for offline bootstrap (PyTorch deps come from the Supertonic egg `venv`, not from here).
 
-Everything under `trainer-backup/` except this README is **gitignored**. You maintain the snapshot when you choose to refresh it.
+Everything under `trainer-backup/` except this README is **gitignored**.
 
 At runtime the app will:
 
@@ -21,4 +21,4 @@ At runtime the app will:
 2. Else `git clone` from `TRAINER_GIT_URL`  
 3. Else download `TRAINER_ARCHIVE_URL` (GitHub zip over HTTPS — works when `git` is blocked)  
 4. Else copy from `trainer-backup/`  
-5. Run `pip install -r requirements.txt` when Python and that file are available  
+5. Download HF ONNX weights if missing (see `TrainerBootstrapService`)
