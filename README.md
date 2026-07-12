@@ -20,12 +20,13 @@ This project wraps that flow in Spring Boot and a small Python worker.
 
 Docker images and the Pterodactyl egg are **generic Java + Python runtimes**. They do **not** clone the upstream trainer at image build time.
 
-On startup, `TrainerBootstrapService` only fetches **trainer source files** (no `pip`):
+On startup, `TrainerBootstrapService` fetches **trainer source files** and **Supertonic ONNX weights** (no app `pip`):
 
 1. Uses `TRAINER_DIR` if `train_style.py` already exists  
 2. Else `git clone` from `TRAINER_GIT_URL`  
 3. Else downloads `TRAINER_ARCHIVE_URL` zip into `data/tmp`  
 4. Else copies from `TRAINER_BACKUP_DIR` (optional local vendor snapshot — see [`trainer-backup/README.md`](trainer-backup/README.md))  
+5. If `supertonic3/onnx/*.onnx` are missing, downloads **`TRAINER_HF_MODEL`** (default `Supertone/supertonic-3`) via `worker/download_supertonic_models.py` — same as upstream `setup.sh`
 
 **PyTorch and other Python deps** are installed outside the app:
 
@@ -66,7 +67,7 @@ See `.env.example`. Important variables:
 
 ## Docker images (GitHub Actions)
 
-[`.github/workflows/docker.yml`](.github/workflows/docker.yml) publishes:
+[`.github/workflows/docker.yml`](.github/workflows/docker.yml) publishes **multi-arch** manifests (`linux/amd64`, `linux/arm64`) to GHCR on push to `main` / tags:
 
 | Image | Use |
 |-------|-----|
@@ -75,6 +76,14 @@ See `.env.example`. Important variables:
 
 Make GHCR packages **public** if the panel cannot pull private images.
 
+Pull (Docker picks the right arch automatically):
+
+```bash
+docker pull ghcr.io/scriptjunkiedev/supertonic-voice-builder:latest
+```
+
+Inspect platforms: `docker buildx imagetools inspect ghcr.io/scriptjunkiedev/supertonic-voice-builder:latest`
+
 ## Deploy
 
 ### Docker appliance
@@ -82,6 +91,8 @@ Make GHCR packages **public** if the panel cannot pull private images.
 ```bash
 docker pull ghcr.io/scriptjunkiedev/supertonic-voice-builder:latest
 ```
+
+Same tag on **amd64** and **arm64**; use on Apple Silicon or ARM VPS without a separate image name.
 
 Populate `trainer-backup/` on the host before build if you want an offline snapshot in the image; otherwise the app clones on first start (needs network + git in container).
 
