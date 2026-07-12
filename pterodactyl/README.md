@@ -41,6 +41,8 @@ Panel defaults:
 
 - `PYTHON_BIN=./venv/bin/python3`
 - `JAR_FILE=app.jar`
+- **`JVM_HEAP_MB=1024`** — Java heap cap; **do not** set `-Xmx` to the full server memory or PyTorch training will be OOM-killed (exit **-9**).
+- Assign **6–8 GB+** container memory for training (upstream cites ~2.6 GB peak for the trainer plus JVM, ONNX, and OS overhead).
 
 See root `.env.example` for trainer clone URLs and paths.
 

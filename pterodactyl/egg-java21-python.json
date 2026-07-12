@@ -13,7 +13,7 @@
         "ghcr.io/scriptjunkiedev/java21-python-yolk:java_21_python": "ghcr.io/scriptjunkiedev/java21-python-yolk:java_21_python"
     },
     "file_denylist": [],
-    "startup": "java -Xms128M -Xmx{{SERVER_MEMORY}}M {{JAVA_FLAGS}} -jar {{JAR_FILE}} --server.port={{SERVER_PORT}} {{APP_ARGS}}",
+    "startup": "java -Xms128M -Xmx{{JVM_HEAP_MB}}M {{JAVA_FLAGS}} -jar {{JAR_FILE}} --server.port={{SERVER_PORT}} {{APP_ARGS}}",
     "config": {
         "files": "{}",
         "startup": "{\r\n    \"done\": \"Started \"\r\n}",
@@ -36,6 +36,16 @@
             "user_viewable": true,
             "user_editable": true,
             "rules": "required|string",
+            "field_type": "text"
+        },
+        {
+            "name": "JVM heap (MB)",
+            "description": "Java -Xmx cap. Leave most of SERVER_MEMORY for Python/PyTorch training (do not set equal to server RAM).",
+            "env_variable": "JVM_HEAP_MB",
+            "default_value": "1024",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|integer|min:256|max:8192",
             "field_type": "text"
         },
         {

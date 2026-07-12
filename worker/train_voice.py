@@ -48,6 +48,7 @@ def main():
 
     cmd = [
         sys.executable,
+        "-u",
         str(runner),
         str(train_script),
         "--name", args.name,
@@ -61,8 +62,12 @@ def main():
 
     env = os.environ.copy()
     env["CUDA_VISIBLE_DEVICES"] = ""
-    env.setdefault("OMP_NUM_THREADS", "16")
-    env.setdefault("MKL_NUM_THREADS", "16")
+    env["PYTHONUNBUFFERED"] = "1"
+    threads = os.environ.get("TRAINING_CPU_THREADS", "4")
+    env.setdefault("OMP_NUM_THREADS", threads)
+    env.setdefault("MKL_NUM_THREADS", threads)
+    env.setdefault("OPENBLAS_NUM_THREADS", threads)
+    env.setdefault("TORCH_NUM_THREADS", threads)
 
     print("CPU-only mode enabled. CUDA_VISIBLE_DEVICES is blank.", flush=True)
     print("Running:", " ".join(cmd), flush=True)
@@ -74,7 +79,14 @@ def main():
     exit_code = proc.wait()
     if exit_code != 0:
         print(f"Training failed with exit code {exit_code}", flush=True)
-        sys.exit(exit_code)
+        if exit_code in (-9, 137):
+            print(
+                "Process was SIGKILL'd (usually out-of-memory). "
+                "Increase panel memory, set JVM_HEAP_MB to ~1024 (not full server RAM), "
+                "or TRAINING_CPU_THREADS=2.",
+                flush=True,
+            )
+        sys.exit(exit_code if exit_code > 0 else 1)
 
     after_paths = [p for p in trainer_dir.rglob("*.json") if p.is_file() and str(p) not in before]
     if after_paths:

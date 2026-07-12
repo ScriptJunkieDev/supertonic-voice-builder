@@ -33,6 +33,8 @@ public class HealthController {
         body.put("workerPresent", props.isWorkerScriptPresent());
         body.put("trainerDir", props.getTrainerDir());
         body.put("trainerPresent", trainerBootstrap.isTrainerReady());
+        body.put("trainerScriptPresent", props.isTrainerPresent());
+        body.put("trainerModelsPresent", props.isTrainerModelsPresent());
         body.put("trainerBootstrap", trainerBootstrap.getStatus());
         body.put("trainerBootstrapDetail", trainerBootstrap.getDetail());
         body.put("trainerGitUrl", props.getTrainerGitUrl());

@@ -23,7 +23,8 @@
     th, td { text-align: left; padding: 9px; border-bottom: 1px solid #2b3142; font-size: 14px; }
     .badge { padding: 3px 8px; border-radius: 999px; background: #2d3548; }
     .SUCCESS { background: #1f5c3a; } .FAILED { background: #6b2830; } .RUNNING { background: #64551f; } .QUEUED { background: #2d3548; }
-    pre { white-space: pre-wrap; overflow: auto; max-height: 420px; background: #0b0d12; border-radius: 10px; padding: 14px; border: 1px solid #2b3142; }
+    .log-header { margin: 10px 0; padding: 10px 12px; background: #0b0d12; border: 1px solid #2b3142; border-radius: 10px; font-size: 14px; }
+    pre#log { white-space: pre-wrap; word-break: break-word; overflow: auto; max-height: 420px; background: #0b0d12; border-radius: 10px; padding: 14px; border: 1px solid #2b3142; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; line-height: 1.5; margin: 0; }
     .muted { color: #9aa6bd; }
     @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } }
   </style>
@@ -61,7 +62,8 @@
 
   <div class="card">
     <h2>Log</h2>
-    <div class="muted" id="selectedJob">Select a job to view logs.</div>
+    <div class="log-header muted" id="selectedJob">Select a job to view logs.</div>
+    <div class="muted" id="logMeta" style="font-size:12px;margin-bottom:8px;"></div>
     <pre id="log"></pre>
   </div>
 </div>
@@ -69,7 +71,9 @@
 const jobsEl = document.getElementById('jobs');
 const logEl = document.getElementById('log');
 const selectedJobEl = document.getElementById('selectedJob');
-let selectedJob = null;
+const logMetaEl = document.getElementById('logMeta');
+let selectedJobId = null;
+let selectedJobName = null;
 
 function stepsForQuality(q) {
   if (q === 'fast') return 1000;
@@ -77,28 +81,93 @@ function stepsForQuality(q) {
   return 3000;
 }
 
-async function loadJobs() {
+function escapeHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+}
+
+let pollTimer = null;
+
+function schedulePoll() {
+  if (pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(tick, 2000);
+}
+
+async function tick() {
   const res = await fetch('/api/jobs');
   const jobs = await res.json();
+  await loadJobsFromList(jobs);
+  if (!selectedJobId) return;
+  const job = jobs.find(j => j.id === selectedJobId);
+  if (job && selectedJobName) {
+    setLogHeader(selectedJobName, selectedJobId, job.status, job.startedAt);
+  }
+  await refreshLog();
+  if (job && (job.status === 'RUNNING' || job.status === 'QUEUED') && job.startedAt) {
+    logMetaEl.textContent = `Live log · ${formatElapsedSince(job.startedAt)} · watch for [progress] every ~2 min and Step N/${job.steps} from trainer`;
+  } else {
+    logMetaEl.textContent = selectedJobId ? 'Select Log on a job or keep this panel open to follow output.' : '';
+  }
+}
+
+async function loadJobs() {
+  const res = await fetch('/api/jobs');
+  await loadJobsFromList(await res.json());
+}
+
+async function loadJobsFromList(jobs) {
   jobsEl.innerHTML = jobs.map(j => `
     <tr>
       <td><span class="badge ${j.status}">${j.status}</span></td>
-      <td>${j.voiceName}</td>
+      <td>${escapeHtml(j.voiceName)}</td>
       <td>${j.steps}</td>
       <td>${j.createdAt ? new Date(j.createdAt).toLocaleString() : ''}</td>
       <td>
-        <button onclick="showLog('${j.id}', '${j.voiceName}')">Log</button>
-        ${j.status === 'SUCCESS' ? `<a href="/api/jobs/${j.id}/download"><button>Download JSON</button></a>` : ''}
+        <button type="button" data-job-id="${escapeHtml(j.id)}" data-job-name="${escapeHtml(j.voiceName)}" class="log-btn">Log</button>
+        ${j.status === 'SUCCESS' ? `<a href="/api/jobs/${encodeURIComponent(j.id)}/download"><button type="button">Download JSON</button></a>` : ''}
       </td>
     </tr>`).join('');
+  jobsEl.querySelectorAll('.log-btn').forEach(btn => {
+    btn.addEventListener('click', () => showLog(btn.dataset.jobId, btn.dataset.jobName));
+  });
+}
+
+function setLogHeader(name, id, status, startedAt) {
+  let extra = status ? ` · ${status}` : '';
+  if (startedAt && (status === 'RUNNING' || status === 'QUEUED')) {
+    extra += formatElapsedSince(startedAt);
+  }
+  selectedJobEl.textContent = `${name} (${id})${extra}`;
+}
+
+function formatElapsedSince(iso) {
+  const sec = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = sec % 60;
+  if (h > 0) return ` · running ${h}h ${m}m`;
+  if (m > 0) return ` · running ${m}m ${s}s`;
+  return ` · running ${s}s`;
+}
+
+let lastLogFetchAt = null;
+
+async function refreshLog() {
+  if (!selectedJobId) return;
+  const res = await fetch(`/api/jobs/${encodeURIComponent(selectedJobId)}/log`);
+  const text = await res.text();
+  logEl.textContent = text || '(no log output yet)';
+  logEl.scrollTop = logEl.scrollHeight;
+  lastLogFetchAt = new Date();
 }
 
 async function showLog(id, name) {
-  selectedJob = id;
-  selectedJobEl.textContent = `Job: ${name} (${id})`;
-  const res = await fetch(`/api/jobs/${id}/log`);
-  logEl.textContent = await res.text();
-  logEl.scrollTop = logEl.scrollHeight;
+  selectedJobId = id;
+  selectedJobName = name;
+  const jobsRes = await fetch('/api/jobs');
+  const jobs = await jobsRes.json();
+  const job = jobs.find(j => j.id === id);
+  setLogHeader(name, id, job ? job.status : null, job ? job.startedAt : null);
+  await refreshLog();
 }
 
 document.getElementById('jobForm').addEventListener('submit', async (e) => {
@@ -122,10 +191,7 @@ document.getElementById('jobForm').addEventListener('submit', async (e) => {
   }
 });
 
-setInterval(async () => {
-  await loadJobs();
-  if (selectedJob) await showLog(selectedJob, selectedJobEl.textContent);
-}, 5000);
+schedulePoll();
 loadJobs();
 </script>
 </body>

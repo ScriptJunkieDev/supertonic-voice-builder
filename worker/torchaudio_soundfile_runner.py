@@ -2,6 +2,7 @@
 """Run train_style.py with torchaudio.load backed by soundfile (no torchcodec/FFmpeg)."""
 from __future__ import annotations
 
+import os
 import runpy
 import sys
 from pathlib import Path
@@ -38,6 +39,12 @@ def main() -> None:
     if not train_script.is_file():
         print(f"ERROR: train_style.py not found at {train_script}", file=sys.stderr)
         sys.exit(2)
+
+    trainer_dir = train_script.parent
+    os.chdir(trainer_dir)
+    trainer_dir_str = str(trainer_dir)
+    if trainer_dir_str not in sys.path:
+        sys.path.insert(0, trainer_dir_str)
 
     _patch_torchaudio_load()
     sys.argv = [str(train_script), *sys.argv[2:]]

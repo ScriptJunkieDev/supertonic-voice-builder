@@ -19,9 +19,14 @@ public class VoiceBuilderProperties {
     private String trainerArchiveUrl;
     private String trainerBackupDir;
     private boolean trainerBootstrapEnabled = true;
+    private String trainerHfModel = "Supertone/supertonic-3";
+    private String trainerHfLocalDir = "supertonic3";
+    private boolean trainerModelBootstrapEnabled = true;
     private int defaultSteps;
     private double defaultLearningRate;
     private int maxConcurrentJobs;
+    private int trainingCpuThreads = 4;
+    private int trainingProgressIntervalSeconds = 120;
 
     public String getDataDir() { return dataDir; }
     public void setDataDir(String dataDir) { this.dataDir = dataDir; }
@@ -41,12 +46,24 @@ public class VoiceBuilderProperties {
     public void setTrainerBackupDir(String trainerBackupDir) { this.trainerBackupDir = trainerBackupDir; }
     public boolean isTrainerBootstrapEnabled() { return trainerBootstrapEnabled; }
     public void setTrainerBootstrapEnabled(boolean trainerBootstrapEnabled) { this.trainerBootstrapEnabled = trainerBootstrapEnabled; }
+    public String getTrainerHfModel() { return trainerHfModel; }
+    public void setTrainerHfModel(String trainerHfModel) { this.trainerHfModel = trainerHfModel; }
+    public String getTrainerHfLocalDir() { return trainerHfLocalDir; }
+    public void setTrainerHfLocalDir(String trainerHfLocalDir) { this.trainerHfLocalDir = trainerHfLocalDir; }
+    public boolean isTrainerModelBootstrapEnabled() { return trainerModelBootstrapEnabled; }
+    public void setTrainerModelBootstrapEnabled(boolean trainerModelBootstrapEnabled) { this.trainerModelBootstrapEnabled = trainerModelBootstrapEnabled; }
     public int getDefaultSteps() { return defaultSteps; }
     public void setDefaultSteps(int defaultSteps) { this.defaultSteps = defaultSteps; }
     public double getDefaultLearningRate() { return defaultLearningRate; }
     public void setDefaultLearningRate(double defaultLearningRate) { this.defaultLearningRate = defaultLearningRate; }
     public int getMaxConcurrentJobs() { return maxConcurrentJobs; }
     public void setMaxConcurrentJobs(int maxConcurrentJobs) { this.maxConcurrentJobs = maxConcurrentJobs; }
+    public int getTrainingCpuThreads() { return trainingCpuThreads; }
+    public void setTrainingCpuThreads(int trainingCpuThreads) { this.trainingCpuThreads = trainingCpuThreads; }
+    public int getTrainingProgressIntervalSeconds() { return trainingProgressIntervalSeconds; }
+    public void setTrainingProgressIntervalSeconds(int trainingProgressIntervalSeconds) {
+        this.trainingProgressIntervalSeconds = trainingProgressIntervalSeconds;
+    }
 
     @PostConstruct
     void normalizeConfiguredPaths() {
@@ -82,5 +99,9 @@ public class VoiceBuilderProperties {
 
     public boolean isTrainerPresent() {
         return Files.isRegularFile(Path.of(trainerDir, "train_style.py"));
+    }
+
+    public boolean isTrainerModelsPresent() {
+        return Files.isRegularFile(Path.of(trainerDir, trainerHfLocalDir, "onnx", "duration_predictor.onnx"));
     }
 }

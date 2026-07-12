@@ -56,8 +56,9 @@ public class TrainerBootstrapService {
         }
         try {
             ensureTrainerSourcesReady();
+            ensureSupertonicModelWeights();
             status.set("ready");
-            detail.set("train_style.py is available at " + props.getTrainerDir());
+            detail.set("train_style.py and Supertonic ONNX weights are available under " + props.getTrainerDir());
         } catch (IOException | InterruptedException e) {
             status.set("failed");
             detail.set(e.getMessage());
@@ -74,7 +75,43 @@ public class TrainerBootstrapService {
     }
 
     public boolean isTrainerReady() {
-        return props.isTrainerPresent();
+        return props.isTrainerPresent() && (!props.isTrainerModelBootstrapEnabled() || props.isTrainerModelsPresent());
+    }
+
+    private void ensureSupertonicModelWeights() throws IOException, InterruptedException {
+        if (!props.isTrainerModelBootstrapEnabled()) {
+            return;
+        }
+        Path trainerDir = Path.of(props.getTrainerDir());
+        Path marker = trainerDir.resolve(props.getTrainerHfLocalDir()).resolve("onnx").resolve("duration_predictor.onnx");
+        if (Files.isRegularFile(marker)) {
+            log.info("Supertonic ONNX weights already present at {}", marker);
+            return;
+        }
+        if (!props.isPythonAvailable()) {
+            throw new IOException("Python is required to download Supertonic weights (HF_TOKEN optional for rate limits)");
+        }
+        Path workerScript = Path.of(props.getWorkerScript());
+        Path downloadScript = workerScript.getParent().resolve("download_supertonic_models.py");
+        if (!Files.isRegularFile(downloadScript)) {
+            throw new IOException("Missing worker script: " + downloadScript);
+        }
+        String repo = props.getTrainerHfModel();
+        if (repo == null || repo.isBlank()) {
+            throw new IOException("TRAINER_HF_MODEL is not configured");
+        }
+        log.info("Downloading Supertonic weights {} into {}/{}", repo, trainerDir, props.getTrainerHfLocalDir());
+        List<String> cmd = List.of(
+                props.getPythonBin(),
+                downloadScript.toString(),
+                "--trainer-dir", trainerDir.toString(),
+                "--repo", repo.trim(),
+                "--local-dir-name", props.getTrainerHfLocalDir()
+        );
+        runProcess(cmd, VoiceBuilderPaths.appRoot());
+        if (!Files.isRegularFile(marker)) {
+            throw new IOException("Supertonic weight download completed but marker file is still missing: " + marker);
+        }
     }
 
     private void ensureTrainerSourcesReady() throws IOException, InterruptedException {
@@ -212,8 +249,10 @@ public class TrainerBootstrapService {
             String line;
             while ((line = reader.readLine()) != null) {
                 out.append(line).append(System.lineSeparator());
+                System.out.println(line);
             }
         }
+        System.out.flush();
         int code = process.waitFor();
         if (code != 0) {
             throw new IOException("Command failed (" + code + "): " + String.join(" ", cmd)

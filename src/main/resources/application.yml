@@ -16,7 +16,12 @@ voice-builder:
   trainer-archive-url: ${TRAINER_ARCHIVE_URL:https://github.com/saurabhv749/supertonic3-voice-clone/archive/refs/heads/main.zip}
   trainer-backup-dir: ${TRAINER_BACKUP_DIR:./trainer-backup}
   trainer-bootstrap-enabled: ${TRAINER_BOOTSTRAP_ENABLED:true}
+  trainer-hf-model: ${TRAINER_HF_MODEL:Supertone/supertonic-3}
+  trainer-hf-local-dir: ${TRAINER_HF_LOCAL_DIR:supertonic3}
+  trainer-model-bootstrap-enabled: ${TRAINER_MODEL_BOOTSTRAP_ENABLED:true}
   worker-script: ${WORKER_SCRIPT:./worker/train_voice.py}
   default-steps: ${DEFAULT_STEPS:3000}
   default-learning-rate: ${DEFAULT_LEARNING_RATE:0.0002}
   max-concurrent-jobs: ${MAX_CONCURRENT_JOBS:1}
+  training-cpu-threads: ${TRAINING_CPU_THREADS:4}
+  training-progress-interval-seconds: ${TRAINING_PROGRESS_INTERVAL_SECONDS:120}
