@@ -1,5 +1,6 @@
-# Supertonic Voice Builder — Pterodactyl runtime only (NOT a generic Java/Python egg).
-# CI: ghcr.io/<owner>/supertonic-voice-builder-ptero:runtime
+# Extend Pterodactyl's Java 21 yolk with Python (generic runtime — no third-party trainer repos).
+# CI: .github/workflows/docker.yml → ghcr.io/<owner>/java21-python-yolk:java_21_python
+# Uses distro python3 only (Ubuntu 22.04 → 3.10+, required for PyTorch 2.9 CPU wheels).
 
 FROM ghcr.io/pterodactyl/yolks:java_21
 

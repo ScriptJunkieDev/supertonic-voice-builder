@@ -56,7 +56,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
 
   ptero-yolk:
-    name: Supertonic Voice Builder (Ptero runtime)
+    name: Pterodactyl Java 21 + Python yolk
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -82,17 +82,17 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata (Ptero runtime)
+      - name: Extract metadata (yolk)
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ env.GHCR_OWNER }}/supertonic-voice-builder-ptero
+          images: ghcr.io/${{ env.GHCR_OWNER }}/java21-python-yolk
           tags: |
-            type=raw,value=runtime,enable={{is_default_branch}}
-            type=sha,prefix=runtime-
+            type=raw,value=java_21_python,enable={{is_default_branch}}
+            type=sha,prefix=
             type=ref,event=tag
 
-      - name: Build and push Ptero runtime image
+      - name: Build and push Pterodactyl yolk
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -103,7 +103,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
 
   ptero-yolk-install:
-    name: Supertonic Voice Builder (Ptero egg install)
+    name: Pterodactyl egg install image (root)
     needs: ptero-yolk
     runs-on: ubuntu-latest
     permissions:
@@ -130,16 +130,16 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata (Ptero install)
+      - name: Extract metadata (yolk install)
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ env.GHCR_OWNER }}/supertonic-voice-builder-ptero
+          images: ghcr.io/${{ env.GHCR_OWNER }}/java21-python-yolk
           tags: |
-            type=raw,value=install,enable={{is_default_branch}}
+            type=raw,value=java_21_python_install,enable={{is_default_branch}}
             type=sha,prefix=install-
 
-      - name: Build and push Ptero install image
+      - name: Build and push Pterodactyl install image
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -148,5 +148,3 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            PT_RUNTIME_IMAGE=ghcr.io/${{ env.GHCR_OWNER }}/supertonic-voice-builder-ptero:runtime

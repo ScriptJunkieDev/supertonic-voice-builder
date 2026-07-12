@@ -72,8 +72,8 @@ See `.env.example`. Important variables:
 | Image | Use |
 |-------|-----|
 | `ghcr.io/scriptjunkiedev/supertonic-voice-builder:latest` | Docker appliance (JAR + worker + `trainer-backup/` slot) |
-| `ghcr.io/scriptjunkiedev/supertonic-voice-builder-ptero:runtime` | **Pterodactyl server runtime** (Supertonic egg only) |
-| `ghcr.io/scriptjunkiedev/supertonic-voice-builder-ptero:install` | Pterodactyl egg install job only (root) |
+| `ghcr.io/scriptjunkiedev/java21-python-yolk:java_21_python` | **Pterodactyl server runtime** |
+| `ghcr.io/scriptjunkiedev/java21-python-yolk:java_21_python_install` | Pterodactyl egg Reinstall only (root) |
 
 Make GHCR packages **public** if the panel cannot pull private images.
 
@@ -99,7 +99,7 @@ Populate `trainer-backup/` on the host before build if you want an offline snaps
 
 ### Pterodactyl
 
-Dedicated egg (not for other apps): [`pterodactyl/egg-supertonic-voice-builder.json`](pterodactyl/egg-supertonic-voice-builder.json) + [`pterodactyl/README.md`](pterodactyl/README.md).
+Dedicated egg: [`pterodactyl/egg-supertonic-voice-builder.json`](pterodactyl/egg-supertonic-voice-builder.json) + [`pterodactyl/README.md`](pterodactyl/README.md).
 
 Upload `app.jar`, `worker/`, and optionally `trainer-backup/` via local deploy (`send.jar`, gitignored bat/ps1).
 
@@ -113,7 +113,7 @@ Gitignored: `*.jar`, `*.zip`, `*.bat`, `*.ps1`, `trainer-backup/**` (except `tra
 src/main/java/          API, TrainerBootstrapService, embedded UI
 worker/                 train_voice.py
 trainer-backup/         Optional vendor snapshot (contents not in git)
-pterodactyl/            Supertonic-only Ptero egg + runtime Dockerfiles
+pterodactyl/            Supertonic Voice Builder dedicated egg + java21-python-yolk Dockerfiles
 Dockerfile              App image (no upstream git clone at build)
 ```
 
