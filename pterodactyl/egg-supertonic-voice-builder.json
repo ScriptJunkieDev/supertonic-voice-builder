@@ -6,7 +6,7 @@
     },
     "exported_at": "2026-07-11T20:00:00-04:00",
     "name": "Supertonic Voice Builder",
-    "author": "scriptjunkie@towncraft.us",
+    "author": "scriptjunkie@towncraft.me",
     "description": "Dedicated to ScriptJunkieDev/supertonic-voice-builder. Egg install creates ./venv (PyTorch CPU). Upload app.jar + worker/. Not for other Spring or Python apps.",
     "features": null,
     "docker_images": {
