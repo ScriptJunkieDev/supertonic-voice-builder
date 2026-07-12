@@ -66,6 +66,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Set GHCR owner (lowercase)
+        run: echo "GHCR_OWNER=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_ENV"
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
@@ -83,7 +86,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository_owner }}/supertonic-voice-builder-ptero
+          images: ghcr.io/${{ env.GHCR_OWNER }}/supertonic-voice-builder-ptero
           tags: |
             type=raw,value=runtime,enable={{is_default_branch}}
             type=sha,prefix=runtime-
@@ -111,6 +114,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Set GHCR owner (lowercase)
+        run: echo "GHCR_OWNER=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_ENV"
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
@@ -128,7 +134,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository_owner }}/supertonic-voice-builder-ptero
+          images: ghcr.io/${{ env.GHCR_OWNER }}/supertonic-voice-builder-ptero
           tags: |
             type=raw,value=install,enable={{is_default_branch}}
             type=sha,prefix=install-
@@ -143,4 +149,4 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            PT_RUNTIME_IMAGE=ghcr.io/${{ github.repository_owner }}/supertonic-voice-builder-ptero:runtime
+            PT_RUNTIME_IMAGE=ghcr.io/${{ env.GHCR_OWNER }}/supertonic-voice-builder-ptero:runtime
